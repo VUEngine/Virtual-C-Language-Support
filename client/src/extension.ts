@@ -16,14 +16,13 @@ export function activate(context: ExtensionContext) {
 
 	const clientOptions: LanguageClientOptions = {
 		documentSelector: [
-			{ scheme: 'file', language: 'c' },
-			{ scheme: 'file', language: 'cpp' },
+			{ scheme: 'file', language: 'vc' },
 		]
 	};
 
 	client = new LanguageClient(
-		'vuengineLanguageServer',
-		'VUEngine Language Server',
+		'virtualCLanguageServer',
+		'Virtual C Language Server',
 		serverOptions,
 		clientOptions
 	);

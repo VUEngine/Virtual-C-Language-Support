@@ -1,13 +1,13 @@
 {
-  "name": "vuengine-language-server-client",
-  "description": "VUEngine Language Server client",
+  "name": "virtual-c-language-server-client",
+  "description": "Virtual C Language Server client",
   "author": "KR155E <c.radke@posteo.de>",
   "license": "MIT",
   "version": "latest",
   "publisher": "vuengine",
   "repository": {
     "type": "git",
-    "url": "https://github.com/VUEngine/VUEngine-Language-Server"
+    "url": "https://github.com/VUEngine/Virtual-C-Language-Support"
   },
   "engines": {
     "vscode": "^1.75.0"
