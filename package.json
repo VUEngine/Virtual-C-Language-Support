@@ -1,15 +1,19 @@
 {
   "name": "vuengine-language-server",
-  "description": "A VUEngine Language Server",
+  "displayName": "VUEngine Language Server",
+  "description": "A Language Server implementing Intellisense for VUEngine's C dialect.",
   "author": "KR155E <c.radke@posteo.de>",
   "license": "MIT",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/VUEngine/VUEngine-Language-Server"
   },
   "publisher": "vuengine",
-  "categories": [],
+  "icon": "resources/icon.png",
+  "categories": [
+    "Programming Languages"
+  ],
   "keywords": [
     "multi-root ready"
   ],
