@@ -1,7 +1,7 @@
 {
   "name": "vuengine-language-server",
   "displayName": "VUEngine Language Server",
-  "description": "A Language Server implementing Intellisense for VUEngine's C dialect.",
+  "description": "Full language support for VUEngine's C dialect including a language server",
   "author": "KR155E <c.radke@posteo.de>",
   "license": "MIT",
   "version": "0.6.0",
@@ -24,6 +24,114 @@
     "onLanguage:c",
     "onLanguage:cpp"
   ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "c",
+        "extensions": [
+          ".c",
+          ".i"
+        ],
+        "aliases": [
+          "C",
+          "c"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "cpp",
+        "extensions": [
+          ".cpp",
+          ".cppm",
+          ".cc",
+          ".ccm",
+          ".cxx",
+          ".cxxm",
+          ".c++",
+          ".c++m",
+          ".hpp",
+          ".hh",
+          ".hxx",
+          ".h++",
+          ".h",
+          ".ii",
+          ".ino",
+          ".inl",
+          ".ipp",
+          ".ixx",
+          ".tpp",
+          ".txx",
+          ".hpp.in",
+          ".h.in"
+        ],
+        "aliases": [
+          "C++",
+          "Cpp",
+          "cpp"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "cuda-cpp",
+        "extensions": [
+          ".cu",
+          ".cuh"
+        ],
+        "aliases": [
+          "CUDA C++"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "c",
+        "scopeName": "source.c",
+        "path": "./syntaxes/c.tmLanguage.json"
+      },
+      {
+        "language": "cpp",
+        "scopeName": "source.cpp.embedded.macro",
+        "path": "./syntaxes/cpp.embedded.macro.tmLanguage.json"
+      },
+      {
+        "language": "cpp",
+        "scopeName": "source.cpp",
+        "path": "./syntaxes/cpp.tmLanguage.json"
+      },
+      {
+        "scopeName": "source.c.platform",
+        "path": "./syntaxes/platform.tmLanguage.json"
+      },
+      {
+        "language": "cuda-cpp",
+        "scopeName": "source.cuda-cpp",
+        "path": "./syntaxes/cuda-cpp.tmLanguage.json"
+      }
+    ],
+    "problemPatterns": [
+      {
+        "name": "nvcc-location",
+        "regexp": "^(.*)\\((\\d+)\\):\\s+(warning|error):\\s+(.*)",
+        "kind": "location",
+        "file": 1,
+        "location": 2,
+        "severity": 3,
+        "message": 4
+      }
+    ],
+    "problemMatchers": [
+      {
+        "name": "nvcc",
+        "owner": "cuda-cpp",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": "$nvcc-location"
+      }
+    ]
+  },
   "main": "./client/out/extension",
   "scripts": {
     "vscode:prepublish": "npm run compile",
