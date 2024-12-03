@@ -1,5 +1,5 @@
 {
-  "name": "vuengine-language-server-server",
+  "name": "vuengine-language-server",
   "description": "VUEngine Language Server server implemented with node.js",
   "version": "latest",
   "author": "KR155E <c.radke@posteo.de>",

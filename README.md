@@ -1,13 +1,18 @@
-# VUEngine Language Server
+# Virtual C Language Support
 
-A Language Server implementing Intellisense for VUEngine's C dialect.
+Full language support for Virtual C, VUEngine's C dialect, providing syntax highlighting, bracket matching, folding and Intellisense.
+
+Contains the basic language definitions as well as a language server.
 
 ![](screenshot.png?raw=true)
 
 ## Features
 
+- Bracket matching
 - Code Completion
+- Folding
 - Go to definition
+- Syntax highlighting
 
 ## Development
 

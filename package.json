@@ -1,13 +1,13 @@
 {
-  "name": "vuengine-language-server",
-  "displayName": "VUEngine Language Server",
-  "description": "Full language support for VUEngine's C dialect including a language server",
+  "name": "virtual-c-language-support",
+  "displayName": "Virtual C Language Support",
+  "description": "Full language support for Virtual C, VUEngine's C dialect, providing syntax highlighting, bracket matching, folding and Intellisense.",
   "author": "KR155E <c.radke@posteo.de>",
   "license": "MIT",
   "version": "0.6.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/VUEngine/VUEngine-Language-Server"
+    "url": "https://github.com/VUEngine/Virtual-C-Language-Support"
   },
   "publisher": "vuengine",
   "icon": "resources/icon.png",
