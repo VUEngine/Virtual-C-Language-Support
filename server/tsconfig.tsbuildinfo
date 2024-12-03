@@ -1,1 +1,1 @@
-{"root":["./src/server.ts","./src/data/mockdata.ts","./src/handlers/completion.ts"],"version":"5.7.2"}
+{"root":["./src/server.ts","./src/data/mockdata.ts","./src/handlers/completion.ts","./src/handlers/definition.ts"],"version":"5.7.2"}
