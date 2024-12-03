@@ -1,3 +1,5 @@
+<img src="resources/icon.png" width="128" height="128"><br />
+
 # Virtual C Language Support
 
 Full language support for Virtual C, VUEngine's C dialect, providing syntax highlighting, bracket matching, folding and Intellisense.
