@@ -17,3 +17,16 @@ Here's how to run this locally in development mode.
 - Open a terminal and start compiling the client and server in watch mode with `npm run watch`.
 - In the Debug view in the sidebar, select `Launch Client` from the drop down (if it is not already) and press ▷ to run the launch config (or simply F5).
 - An Extension Development Host instance of VSCode will start with the language server running.
+
+## Package
+
+This language server can be packaged as a VSIX extension with vsce.
+
+- `npm i -g vsce`
+- `vsce package`
+
+## Release
+
+To package and publish a version tag needs to be created and pushed. This will trigger a Github action that will create a new GitHub release.
+
+- `git tag v{version} && git push --tags`
