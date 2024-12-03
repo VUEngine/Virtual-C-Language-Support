@@ -26,13 +26,12 @@ Here's how to run this locally in development mode.
 
 ## Package
 
-This language server can be packaged as a VSIX extension with vsce.
+To package a VSIX file, run
 
-- `npm i -g vsce`
-- `vsce package`
+- `npm run package`
 
 ## Release
 
-To package and publish, the version number in `package.json` has to be updated and a matching version tag needs to be created and pushed. This will trigger a Github action that will create a new GitHub release.
+To automatically package and publish, the version number in `package.json` has to be updated and a matching version tag needs to be created and pushed. This will trigger a Github action that will create a new GitHub release.
 
 - `git tag v{VERSION} && git push --tags`

@@ -25,11 +25,8 @@ jobs:
       - name: Install dependencies
         run: npm i
 
-      - name: Install vsce
-        run: npm i -g vsce
-
       - name: Package
-        run: vsce package
+        run: npm run package
 
       - name: Upload artifact to action
         uses: actions/upload-artifact@v4

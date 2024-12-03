@@ -45,12 +45,14 @@
       }
     ]
   },
-  "main": "./client/out/extension",
+  "main": "./dist/client/src/extension.js",
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -b",
-    "watch": "tsc -b -w",
+    "vscode:prepublish": "npm run esbuild -- --minify",
+    "esbuild": "esbuild ./client/src/extension.ts ./server/src/server.ts --bundle --outdir=dist/ --external:vscode --format=cjs --platform=node",
+    "compile": "npm run esbuild -- --sourcemap",
+    "watch": "npm run esbuild -- --sourcemap --watch",
     "lint": "eslint",
+    "package": "npm run compile && vsce package",
     "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
   },
   "devDependencies": {
@@ -58,6 +60,8 @@
     "@stylistic/eslint-plugin": "^2.9.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.19.11",
     "eslint": "^9.13.0",
     "mocha": "^10.3.0",
     "typescript": "^5.7.2",
