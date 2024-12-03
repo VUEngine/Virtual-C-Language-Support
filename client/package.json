@@ -1,0 +1,22 @@
+{
+  "name": "vuengine-language-server-client",
+  "description": "VUEngine Language Server client",
+  "author": "KR155E <c.radke@posteo.de>",
+  "license": "MIT",
+  "version": "0.5.0",
+  "publisher": "vuengine",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VUEngine/VUEngine-Language-Server"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "dependencies": {
+    "glob": "^11.0.0",
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.75.1"
+  }
+}

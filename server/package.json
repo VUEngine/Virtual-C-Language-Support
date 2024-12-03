@@ -1,0 +1,19 @@
+{
+  "name": "vuengine-language-server-server",
+  "description": "VUEngine Language Server server implemented with node.js",
+  "version": "0.5.0",
+  "author": "KR155E <c.radke@posteo.de>",
+  "license": "MIT",
+  "engines": {
+    "node": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VUEngine/VUEngine-Language-Server"
+  },
+  "dependencies": {
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.11"
+  },
+  "scripts": {}
+}
