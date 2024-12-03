@@ -27,6 +27,6 @@ This language server can be packaged as a VSIX extension with vsce.
 
 ## Release
 
-To package and publish a version tag needs to be created and pushed. This will trigger a Github action that will create a new GitHub release.
+To package and publish, the version number in `package.json` has to be updated and a matching version tag needs to be created and pushed. This will trigger a Github action that will create a new GitHub release.
 
-- `git tag v{version} && git push --tags`
+- `git tag v{VERSION} && git push --tags`

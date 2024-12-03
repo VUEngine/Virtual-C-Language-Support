@@ -1,7 +1,7 @@
 {
   "name": "vuengine-language-server-server",
   "description": "VUEngine Language Server server implemented with node.js",
-  "version": "0.5.0",
+  "version": "latest",
   "author": "KR155E <c.radke@posteo.de>",
   "license": "MIT",
   "engines": {

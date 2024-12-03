@@ -3,7 +3,7 @@
   "description": "VUEngine Language Server client",
   "author": "KR155E <c.radke@posteo.de>",
   "license": "MIT",
-  "version": "0.5.0",
+  "version": "latest",
   "publisher": "vuengine",
   "repository": {
     "type": "git",
