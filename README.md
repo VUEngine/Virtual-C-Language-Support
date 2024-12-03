@@ -7,6 +7,7 @@ A Language Server implementing Intellisense for VUEngine's C dialect.
 ## Features
 
 - Code Completion
+- Go to definition
 
 ## Development
 

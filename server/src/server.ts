@@ -9,8 +9,9 @@ import {
 	TextDocumentSyncKind
 } from 'vscode-languageserver/node';
 import { onCompletion } from './handlers/completion';
+import { onDefinition } from './handlers/definition';
 
-const connection = createConnection(ProposedFeatures.all);
+export const connection = createConnection(ProposedFeatures.all);
 export const documents = new TextDocuments(TextDocument);
 
 let hasConfigurationCapability = false;
@@ -30,6 +31,7 @@ connection.onInitialize((params: InitializeParams) => {
 	const result: InitializeResult = {
 		capabilities: {
 			completionProvider: {},
+			definitionProvider: {},
 			textDocumentSync: TextDocumentSyncKind.Incremental,
 			workspace: hasWorkspaceFolderCapability
 				? {
@@ -49,8 +51,6 @@ connection.onInitialized(() => {
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
 	}
 
-	// const engineCorePath = await connection.workspace.getConfiguration('build.engine.core.path');
-
 	if (hasWorkspaceFolderCapability) {
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
 			connection.console.log('Workspace folder change event received.');
@@ -59,6 +59,7 @@ connection.onInitialized(() => {
 });
 
 connection.onCompletion(onCompletion);
+connection.onDefinition(onDefinition);
 
 documents.listen(connection);
 connection.listen();

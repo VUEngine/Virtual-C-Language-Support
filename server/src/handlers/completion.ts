@@ -24,6 +24,7 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 		const replaceText = ki.insertText ?? ki.label;
 		return {
 			...ki,
+			// Replace preceding text, e.g. ClassName::, as well
 			textEdit: {
 				newText: replaceText,
 				insert: {
@@ -44,6 +45,7 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 		};
 	});
 
+	// Filter down list to only methods of current class, if contained by the current word.
 	const filteredKnownItems = currentWord.includes('::') ?
 		preparedKnownItems.filter(e => e.label.toLowerCase().startsWith(currentWord.toLowerCase()))
 		: preparedKnownItems;
