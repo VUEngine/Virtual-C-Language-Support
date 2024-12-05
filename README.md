@@ -2,19 +2,21 @@
 
 # Virtual C Language Support
 
-Full language support for Virtual C, VUEngine's C dialect, providing syntax highlighting, bracket matching, folding and Intellisense.
+Full language support for Virtual C providing syntax highlighting, bracket matching, folding and IntelliSense. Virtual C is VUEngine's C dialect that adds classes, inheritance and polymorphism to standard C with a similar syntax to that of C++.
 
-Contains the basic language definitions as well as a language server.
+Contains the basic language definitions as well as a language server to provide IntelliSense.
 
 ![](screenshot.png?raw=true)
 
 ## Features
 
 - Bracket matching
-- Code Completion
+- Code completion
 - Folding
 - Go to definition
 - Syntax highlighting
+
+**Note**: this is a work in progress and the data needed for code completion and go to definition support is currently hardcoded for the latest version of VUEngine Core. Dynamic parsing will be added to the language server in a future version.
 
 ## Development
 

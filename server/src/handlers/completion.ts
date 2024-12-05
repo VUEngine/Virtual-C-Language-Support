@@ -1,6 +1,6 @@
 import { CompletionList, CompletionParams, Position } from 'vscode-languageserver';
-import { mockData } from '../data/mockData';
-import { documents } from '../server';
+import { documents, staticCompletionData } from '../server';
+import { Range } from 'vscode-languageserver-textdocument';
 
 export const onCompletion = (params: CompletionParams): CompletionList => {
 	const content = documents.get(params.textDocument.uri);
@@ -14,33 +14,28 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 	const documentContent = content.getText();
 	const currentLine = documentContent.split("\n")[params.position.line];
 	const lineUntilCursor = currentLine.slice(0, params.position.character);
-	const currentWord = lineUntilCursor.split(/[\s,]+/).pop() ?? '';
+	const currentWord = lineUntilCursor.split(/[\s,(]+/).pop() ?? '';
 
 	const replaceStartPosition: Position = {
 		line: params.position.line,
 		character: lineUntilCursor.length - currentWord.length,
 	};
-	const preparedKnownItems = mockData.map(ki => {
-		const replaceText = ki.insertText ?? ki.label;
+	const preparedKnownItems = staticCompletionData.map(ki => {
+		const range: Range = {
+			start: replaceStartPosition,
+			end: {
+				...replaceStartPosition,
+				character: replaceStartPosition.character + currentWord.length,
+			},
+		};
+
 		return {
 			...ki,
 			// Replace preceding text, e.g. ClassName::, as well
 			textEdit: {
-				newText: replaceText,
-				insert: {
-					start: replaceStartPosition,
-					end: {
-						...replaceStartPosition,
-						character: replaceStartPosition.character + replaceText.length,
-					},
-				},
-				replace: {
-					start: replaceStartPosition,
-					end: {
-						...replaceStartPosition,
-						character: replaceStartPosition.character + replaceText.length,
-					},
-				},
+				newText: ki.label,
+				insert: range,
+				replace: range,
 			}
 		};
 	});
@@ -52,6 +47,6 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 
 	return {
 		isIncomplete: true,
-		items: filteredKnownItems.slice(0, 100),
+		items: filteredKnownItems.slice(0, 1000),
 	};
 };

@@ -1,34 +1,5 @@
 import { Location, LocationLink, TypeDefinitionParams } from 'vscode-languageserver';
-import { connection, documents } from '../server';
-
-const mockLocations: Record<string, Location> = {
-	'VirtualList': {
-		uri: "/source/base/VirtualList.h",
-		range: {
-			start: {
-				line: 33 - 1,
-				character: 0,
-			},
-			end: {
-				line: 33,
-				character: 0,
-			},
-		}
-	},
-	'VirtualList::find': {
-		uri: "/source/base/VirtualList.c",
-		range: {
-			start: {
-				line: 81,
-				character: 0,
-			},
-			end: {
-				line: 88,
-				character: 0,
-			},
-		}
-	}
-};
+import { connection, documents, staticDefinitionData } from '../server';
 
 export const onDefinition = async (params: TypeDefinitionParams): Promise<Location | Location[] | LocationLink[] | null> => {
 	const content = documents.get(params.textDocument.uri);
@@ -48,13 +19,13 @@ export const onDefinition = async (params: TypeDefinitionParams): Promise<Locati
 		currentWord = currentWord.split('::')[0] ?? currentWord;
 	}
 
-	const result = mockLocations[currentWord] ?? null;
+	const result = staticDefinitionData[currentWord] ?? null;
 
 	if (result) {
 		const engineCorePath = await connection.workspace.getConfiguration('build.engine.core.path');
 		return {
 			...result,
-			uri: engineCorePath + result.uri,
+			uri: engineCorePath ? engineCorePath + result.uri : result.uri,
 		};
 	}
 

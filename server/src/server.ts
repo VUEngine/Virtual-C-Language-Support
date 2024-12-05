@@ -1,9 +1,13 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
+	CompletionItem,
 	createConnection,
 	DidChangeConfigurationNotification,
 	InitializeParams,
 	InitializeResult,
+	Location,
 	ProposedFeatures,
 	TextDocuments,
 	TextDocumentSyncKind
@@ -13,6 +17,9 @@ import { onDefinition } from './handlers/definition';
 
 export const connection = createConnection(ProposedFeatures.all);
 export const documents = new TextDocuments(TextDocument);
+
+export let staticCompletionData: CompletionItem[] = [];
+export let staticDefinitionData: Record<string, Location> = {};
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
@@ -30,7 +37,14 @@ connection.onInitialize((params: InitializeParams) => {
 
 	const result: InitializeResult = {
 		capabilities: {
-			completionProvider: {},
+			completionProvider: {
+				triggerCharacters: [
+					":"
+				],
+				completionItem: {
+					labelDetailsSupport: true,
+				}
+			},
 			definitionProvider: {},
 			textDocumentSync: TextDocumentSyncKind.Incremental,
 			workspace: hasWorkspaceFolderCapability
@@ -42,6 +56,7 @@ connection.onInitialize((params: InitializeParams) => {
 				: undefined,
 		}
 	};
+
 	return result;
 });
 
@@ -63,3 +78,12 @@ connection.onDefinition(onDefinition);
 
 documents.listen(connection);
 connection.listen();
+
+
+const baseDataPath = path.join(__dirname, "..", "..", "..", "data");
+const completionFilePath = path.join(baseDataPath, "completion.json");
+const completionFileData = fs.readFileSync(completionFilePath);
+staticCompletionData = JSON.parse(completionFileData.toString()) as CompletionItem[];
+const definitionFilePath = path.join(baseDataPath, "definition.json");
+const definitionFileData = fs.readFileSync(definitionFilePath);
+staticDefinitionData = JSON.parse(definitionFileData.toString()) as Record<string, Location>;
