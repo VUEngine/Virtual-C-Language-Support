@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument';
 import {
 	CompletionItem,
 	createConnection,
@@ -14,15 +14,27 @@ import {
 } from 'vscode-languageserver/node';
 import { onCompletion } from './handlers/completion';
 import { onDefinition } from './handlers/definition';
+import { onSignatureHelp, Signature } from './handlers/signatureHelp';
 
 export const connection = createConnection(ProposedFeatures.all);
 export const documents = new TextDocuments(TextDocument);
 
 export let staticCompletionData: CompletionItem[] = [];
 export let staticDefinitionData: Record<string, Location> = {};
+export let staticSignaturesData: Record<string, Signature> = {};
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
+
+export const getDocumentText = (uri: DocumentUri) => {
+	const content = documents.get(uri);
+	if (!content) {
+		const fileContent = fs.readFileSync(uri);
+		return fileContent.toString();
+	}
+
+	return content.getText();
+};
 
 connection.onInitialize((params: InitializeParams) => {
 	const capabilities = params.capabilities;
@@ -46,6 +58,11 @@ connection.onInitialize((params: InitializeParams) => {
 				}
 			},
 			definitionProvider: {},
+			signatureHelpProvider: {
+				triggerCharacters: [
+					"("
+				],
+			},
 			textDocumentSync: TextDocumentSyncKind.Incremental,
 			workspace: hasWorkspaceFolderCapability
 				? {
@@ -75,6 +92,7 @@ connection.onInitialized(() => {
 
 connection.onCompletion(onCompletion);
 connection.onDefinition(onDefinition);
+connection.onSignatureHelp(onSignatureHelp);
 
 documents.listen(connection);
 connection.listen();
@@ -87,3 +105,6 @@ staticCompletionData = JSON.parse(completionFileData.toString()) as CompletionIt
 const definitionFilePath = path.join(baseDataPath, "definition.json");
 const definitionFileData = fs.readFileSync(definitionFilePath);
 staticDefinitionData = JSON.parse(definitionFileData.toString()) as Record<string, Location>;
+const signaturesFilePath = path.join(baseDataPath, "signatures.json");
+const signaturesFileData = fs.readFileSync(signaturesFilePath);
+staticSignaturesData = JSON.parse(signaturesFileData.toString()) as Record<string, Signature>;

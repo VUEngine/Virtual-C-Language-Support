@@ -68,13 +68,13 @@ const parseDescription = (d) => {
 		lines.push(line);
 	});
 
-	return lines;
+	return lines.join("\n\n").trim();
 };
 
 const parseDescriptions = (item) => {
 	const lines = [
-		...parseDescription(item.briefdescription),
-		...parseDescription(item.detaileddescription),
+		parseDescription(item.briefdescription),
+		parseDescription(item.detaileddescription),
 	];
 
 	return lines.join("\n\n").trim();
@@ -190,16 +190,17 @@ const extractCompletionData = (data) => {
 				}
 
 				const includeThis = member.name._text !== "getInstance";
+				const cleanedArgsString = member.argsstring._text.replace(")=0", ")");
 
 				let completeArgs = "(";
 				if (includeThis) {
 					completeArgs +=  className + " this";
-					if (member.argsstring._text.length > 2) {
+					if (cleanedArgsString.length > 2) {
 						completeArgs += ", ";
 					}
 				}
 
-				completeArgs += member.argsstring._text.slice(1);
+				completeArgs += cleanedArgsString.slice(1);
 				const detail = "(method) " + member.definition._text + completeArgs;
 
 				result.push({
@@ -260,7 +261,7 @@ const extractLocationData = (data, basePath) => {
 
 		// add methods
 		sectiondefs.forEach(sectiondef => {
-			if (!["public-func", "public-static-func", "private-func", "public-static-func"].includes(sectiondef._attributes.kind)) {
+			if (!["public-func", "public-static-func", "private-func", "private-static-func"].includes(sectiondef._attributes.kind)) {
 				return;
 			}
 
@@ -289,6 +290,88 @@ const extractLocationData = (data, basePath) => {
 	return result;
 };
 
+const extractSignaturesData = (data) => {
+	const result = {};
+
+	Object.values(data.classes).forEach(cls => {
+		const className = cls.compoundname._text;
+
+		let sectiondefs = cls.sectiondef;
+		if (!Array.isArray(cls.sectiondef)) {
+			sectiondefs = [sectiondefs];
+		}
+
+		sectiondefs.forEach(sectiondef => {
+			if (!["public-func", "public-static-func", "private-func", "private-static-func"].includes(sectiondef._attributes.kind)) {
+				return;
+			}
+
+			let sectiondefmemberdef = sectiondef.memberdef;
+			if (!Array.isArray(sectiondefmemberdef)) {
+				sectiondefmemberdef = [sectiondefmemberdef];
+			}
+
+			sectiondefmemberdef.forEach(member => {
+				const cleanedArgsString = member.argsstring._text.replace(")=0", ")");
+
+				if (member.name._text === "getInstance") {
+					return;
+				}
+
+				let completeArgs = "(" +  className + " this";
+				if (cleanedArgsString.length > 2) {
+					completeArgs += ", ";
+				}
+				completeArgs += cleanedArgsString.slice(1);
+
+				let params = member.param;
+				if (params !== undefined && !Array.isArray(params)) {
+					params = [params];
+				}
+			
+				let docs = member.detaileddescription?.para?.parameterlist?.parameteritem;
+				if (docs !== undefined && !Array.isArray(docs)) {
+					docs = [docs];
+				}
+			
+				const parameters = [{
+					label: className + " this",
+					documentation: className + " Instance"
+				}];
+				let paramIndex = 0;
+				const args = completeArgs.slice(1, -1).split(",").map(a => a.trim());
+				params?.forEach(param => {
+					const paramName = param.declname?._text ?? param.defname?._text;
+					if (paramName === undefined) {
+						return;
+					}
+
+					paramIndex++;
+			
+					let doc;
+					if (docs) {
+						docs.filter(d => d.parameternamelist?.parametername?._text === paramName).map(d => {
+							doc = parseDescription(d.parameterdescription);
+						});
+					}
+			
+					parameters.push({
+						label: args[paramIndex],
+						documentation: doc
+					});
+				});
+
+				result[member.qualifiedname._text] = {
+					signature: member.definition._text + completeArgs,
+					parameters,
+				};
+			});
+		});
+	});
+
+	return result;
+};
+
 
 const vuengineBasePath = "/Users/chris/dev/vb/vuengine";
 let outputBasePath = path.join(__dirname, "..", "data");
@@ -302,6 +385,11 @@ const docData = {
 	// "structs": coreStructs,
 };
 
+/*/
+const debugDumpPath = path.join(outputBasePath, "doxygen.json");
+fs.writeFileSync(debugDumpPath, JSON.stringify(docData, null, 4));
+/**/
+
 const completionOutputPath = path.join(outputBasePath, "completion.json");
 const completionData = extractCompletionData(docData);
 fs.writeFileSync(completionOutputPath, JSON.stringify(completionData));
@@ -309,5 +397,9 @@ fs.writeFileSync(completionOutputPath, JSON.stringify(completionData));
 const definitionLocationOutputPath = path.join(outputBasePath, "definition.json");
 const definitionLocationData = extractLocationData(docData, coreBasePath);
 fs.writeFileSync(definitionLocationOutputPath, JSON.stringify(definitionLocationData));
+
+const signaturesOutputPath = path.join(outputBasePath, "signatures.json");
+const signaturesData = extractSignaturesData(docData);
+fs.writeFileSync(signaturesOutputPath, JSON.stringify(signaturesData));
 
 

@@ -1,17 +1,9 @@
 import { CompletionList, CompletionParams, Position } from 'vscode-languageserver';
-import { documents, staticCompletionData } from '../server';
 import { Range } from 'vscode-languageserver-textdocument';
+import { getDocumentText, staticCompletionData } from '../server';
 
 export const onCompletion = (params: CompletionParams): CompletionList => {
-	const content = documents.get(params.textDocument.uri);
-	if (!content) {
-		return {
-			isIncomplete: true,
-			items: []
-		};
-	}
-
-	const documentContent = content.getText();
+	const documentContent = getDocumentText(params.textDocument.uri);
 	const currentLine = documentContent.split("\n")[params.position.line];
 	const lineUntilCursor = currentLine.slice(0, params.position.character);
 	const currentWord = lineUntilCursor.split(/[\s,(]+/).pop() ?? '';

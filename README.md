@@ -14,9 +14,10 @@ Contains the basic language definitions as well as a language server to provide 
 - Code completion
 - Folding
 - Go to definition
+- Signature help
 - Syntax highlighting
 
-**Note**: this is a work in progress and the data needed for code completion and go to definition support is currently hardcoded for the latest version of VUEngine Core. Dynamic parsing will be added to the language server in a future version.
+**Note**: this is a work in progress and the data needed for IntelliSense features is currently hardcoded for the latest version of VUEngine Core. Dynamic parsing will be added to the language server in a future version.
 
 ## Development
 

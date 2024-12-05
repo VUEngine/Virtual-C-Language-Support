@@ -1,13 +1,8 @@
 import { Location, LocationLink, TypeDefinitionParams } from 'vscode-languageserver';
-import { connection, documents, staticDefinitionData } from '../server';
+import { connection, getDocumentText, staticDefinitionData } from '../server';
 
 export const onDefinition = async (params: TypeDefinitionParams): Promise<Location | Location[] | LocationLink[] | null> => {
-	const content = documents.get(params.textDocument.uri);
-	if (!content) {
-		return null;
-	}
-
-	const documentContent = content.getText();
+	const documentContent = getDocumentText(params.textDocument.uri);
 	const currentLine = documentContent.split("\n")[params.position.line];
 	const lineUntilCursor = currentLine.slice(0, params.position.character);
 	const lineAfterCursor = currentLine.slice(params.position.character);
