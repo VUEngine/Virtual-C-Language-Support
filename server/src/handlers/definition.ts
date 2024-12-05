@@ -1,5 +1,6 @@
 import { Location, LocationLink, TypeDefinitionParams } from 'vscode-languageserver';
 import { connection, getDocumentText, staticDefinitionData } from '../server';
+import path = require('path');
 
 export const onDefinition = async (params: TypeDefinitionParams): Promise<Location | Location[] | LocationLink[] | null> => {
 	const documentContent = getDocumentText(params.textDocument.uri);
@@ -20,7 +21,7 @@ export const onDefinition = async (params: TypeDefinitionParams): Promise<Locati
 		const engineCorePath = await connection.workspace.getConfiguration('build.engine.core.path');
 		return {
 			...result,
-			uri: engineCorePath ? engineCorePath + result.uri : result.uri,
+			uri: engineCorePath ? path.join(engineCorePath, result.uri) : result.uri,
 		};
 	}
 
