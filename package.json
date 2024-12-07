@@ -45,6 +45,12 @@
         "scopeName": "source.vc",
         "path": "./syntax/vc.tmLanguage.json"
       }
+    ],
+    "snippets": [
+      {
+        "language": "vc",
+        "path": "./snippets/vc.code-snippets"
+      }
     ]
   },
   "main": "./dist/client/src/extension.js",

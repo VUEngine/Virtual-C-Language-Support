@@ -1,0 +1,105 @@
+{
+	"Header Include": {
+		"prefix": "#include",
+		"body": [
+			"#include <${0:Header}.h>"
+		],
+		"description": "Header Include"
+	},
+	"If statement": {
+		"prefix": "if",
+		"body": [
+			"if (${1:expression})",
+			"{",
+			"\t$0",
+			"}"
+		],
+		"description": "If statement"
+	},
+	"Else if statement": {
+		"prefix": "elseif",
+		"body": [
+			"elseif (${1:expression})",
+			"{",
+			"\t$0",
+			"}"
+		],
+		"description": "Else if statement"
+	},
+	"Else statement": {
+		"prefix": "else",
+		"body": [
+			"else (${1:expression})",
+			"{",
+			"\t$0",
+			"}"
+		],
+		"description": "Else statement"
+	},
+	"For loop": {
+		"prefix": "for",
+		"body": [
+			"for (int i = 0; i < ${1:count}; i++)",
+			"{",
+			"\t$0",
+			"}"
+		],
+		"description": "For loop"
+	},
+	"While loop": {
+		"prefix": "while",
+		"body": [
+			"while (${1:expression})",
+			"{",
+			"\t$0",
+			"}"
+		],
+		"description": "While loop"
+	},
+	"Do while loop": {
+		"prefix": "dowhile",
+		"body": [
+			"do",
+			"{",
+			"\t$0",
+			"} while (${1:expression})"
+		],
+		"description": "Do while loop"
+	},
+	"Class method": {
+		"prefix": ["method", "function"],
+		"body": [
+			"${1:void} $TM_FILENAME_BASE::${2:newMethod} (${3})",
+			"{",
+			"\t$0",
+			"}"
+		],
+		"description": "Class method"
+	},
+	"Header file include guard": {
+		"prefix": ["ig", "ifndef"],
+		"body": [
+			"#ifndef ${TM_FILENAME/(.*)/${1:/upcase}/}",
+			"#define ${TM_FILENAME/(.*)/${1:/upcase}/}",
+			"",
+			"$0",
+			"",
+			"#endif ${TM_FILENAME/(.*)/${1:/upcase}/}",
+		],
+		"description": "Header file include guard"
+	},
+	"Region Start": {
+		"prefix": "#region",
+		"body": [
+			"#pragma region $0"
+		],
+		"description": "Folding Region Start"
+	},
+	"Region End": {
+		"prefix": "#endregion",
+		"body": [
+			"#pragma endregion"
+		],
+		"description": "Folding Region End"
+	},
+}
