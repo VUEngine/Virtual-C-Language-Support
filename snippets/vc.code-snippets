@@ -116,6 +116,16 @@
 		],
 		"description": "Header file include guard"
 	},
+	"Public member section doc marker": {
+		"prefix": ["/// @publicsection"],
+		"body": "/// @publicsection\n\n",
+		"description": "Public member section doc marker"
+	},
+	"Private member section doc marker": {
+		"prefix": ["/// @privatesection"],
+		"body": "/// @privatesection\n\n",
+		"description": "Private member section doc marker"
+	},
 	"Region Start": {
 		"prefix": "#region",
 		"body": [

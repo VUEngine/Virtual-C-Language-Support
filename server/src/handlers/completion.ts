@@ -1,8 +1,10 @@
+import * as path from 'path';
 import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, InsertTextFormat, Position } from 'vscode-languageserver';
 import { Range } from 'vscode-languageserver-textdocument';
 import { getDocumentText, staticCompletionData } from '../server';
 
 export const onCompletion = (params: CompletionParams): CompletionList => {
+	const uriBasename = path.parse(params.textDocument.uri).name;
 	const documentContent = getDocumentText(params.textDocument.uri);
 	const currentLine = documentContent.split("\n")[params.position.line];
 	const nextLine = documentContent.split("\n")[params.position.line + 1] ?? "";
@@ -11,12 +13,12 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 
 	const allCompletionItems: CompletionItem[] = [
 		{
-			label: "///",
+			label: "/// doc",
 			labelDetails: {
 				description: "Doc comment block"
 			},
 			kind: CompletionItemKind.Snippet,
-			insertText: getDocCommentSnippet(nextLine),
+			insertText: getDocCommentSnippet(uriBasename, nextLine),
 			insertTextFormat: InsertTextFormat.Snippet
 		},
 		...staticCompletionData,
@@ -57,10 +59,11 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 	};
 };
 
-const getDocCommentSnippet = (nextLine: string): string => {
+const getDocCommentSnippet = (uriBasename: string, nextLine: string): string => {
 	const resultLines: string[] = [];
 
 	const classParts = nextLine.split(/class[\s+]([a-zA-Z]+)[\s+]:[\s+]([a-zA-Z]+)/g);
+	const methodParts = nextLine.split(/[\s+]([a-zA-Z0-9]+)[\s+][^\s^(]*\(([^)]*)\)/g);
 	if (classParts.length > 1) {
 		// consider it a class doc
 		resultLines.push("///");
@@ -69,9 +72,9 @@ const getDocCommentSnippet = (nextLine: string): string => {
 		resultLines.push("/// Inherits from " + classParts[2]);
 		resultLines.push("///");
 		resultLines.push("/// ${1:Class documentation}.");
-	} else {
+	} else if (methodParts.length > 1) {
 		// consider it a method doc
-		resultLines.push("/// ${1:Method documentation}");
+		resultLines.push("/// ${1:Method documentation}.");
 		let placeholderIndex = 2;
 
 		const methodParts = nextLine.split(/[\s+]([a-zA-Z0-9]+)[\s+][^\s^(]*\(([^)]*)\)/g);
@@ -87,6 +90,12 @@ const getDocCommentSnippet = (nextLine: string): string => {
 		if (returnType !== "void") {
 			resultLines.push(`/// @return \${${placeholderIndex}:Return value documentation}`);
 		}
+	} else {
+		resultLines.push("/// ${1:Method documentation}.");
+		resultLines.push("/// @fn: ${2:Function signature}");
+		resultLines.push("/// @memberof: " + uriBasename);
+		resultLines.push(`/// @param \${3:paramName}: \${4:Parameter documentation}`);
+		resultLines.push(`/// @return \${5:Return value documentation}`);
 	}
 
 	return resultLines.join("\n");
