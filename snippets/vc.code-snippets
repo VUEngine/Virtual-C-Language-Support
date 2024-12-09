@@ -66,6 +66,34 @@
 		],
 		"description": "Do while loop"
 	},
+	"Switch statement": {
+		"prefix": "switch",
+		"body": [
+			"switch (${1:expression})",
+			"{",
+			"\tcase ${2:Case}:",
+			"\t{",
+			"\t\t$0",
+			"\t\tbreak;",
+			"\t}",
+			"\tdefault:",
+			"\t{",
+			"\t\tbreak;",
+			"\t}",
+			"}"
+		],
+		"description": "Switch statement"
+	},
+	"Enum": {
+		"prefix": "enum",
+		"body": [
+			"enum ${1:EnumName}",
+			"{",
+			"\tk$0,",
+			"};"
+		],
+		"description": "Enum"
+	},
 	"Class method": {
 		"prefix": ["method", "function"],
 		"body": [

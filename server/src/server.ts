@@ -51,7 +51,7 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities: {
 			completionProvider: {
 				triggerCharacters: [
-					":"
+					":", "/"
 				],
 				completionItem: {
 					labelDetailsSupport: true,
