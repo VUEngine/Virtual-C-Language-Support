@@ -121,6 +121,11 @@
 		"body": "/// @publicsection\n\n",
 		"description": "Public member section doc marker"
 	},
+	"Protected member section doc marker": {
+		"prefix": ["/// @protectedsection"],
+		"body": "/// @protectedsection\n\n",
+		"description": "Protected member section doc marker"
+	},
 	"Private member section doc marker": {
 		"prefix": ["/// @privatesection"],
 		"body": "/// @privatesection\n\n",
