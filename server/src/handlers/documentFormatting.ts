@@ -27,7 +27,7 @@ export const onDocumentFormatting = async (params: DocumentFormattingParams): Pr
 
 	try {
 		const { stdout, stderr } = await asyncExec(
-			`echo "${documentContent}" | ${clangFormatPath ?? "clang-format"} --assume-filename=${filename} --style="${stringifiedConfig}"`
+			`echo "${documentContent.replace(/"/g, '\\"')}" | ${clangFormatPath ?? "clang-format"} --assume-filename=${filename} --style="${stringifiedConfig}"`
 		);
 		if (stderr) {
 			connection.console.error(stderr);
