@@ -28,6 +28,9 @@ export function activate(context: ExtensionContext) {
 	);
 
 	client.start();
+
+	// TODO
+	client.sendRequest("installedPlugins", "[]");
 }
 
 export function deactivate(): Thenable<void> | undefined {

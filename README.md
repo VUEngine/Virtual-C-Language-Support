@@ -12,6 +12,7 @@ Contains the basic language definitions as well as a language server to provide 
 
 - Bracket matching
 - Code completion
+- Code formatting
 - Folding
 - Go to definition
 - Signature help
@@ -23,6 +24,7 @@ Contains the basic language definitions as well as a language server to provide 
 ## Acknowledgements
 
 - Syntax definitions are based on https://github.com/microsoft/vscode/blob/main/extensions/cpp/syntaxes/cpp.tmLanguage.json, which in turn is based on https://github.com/jeff-hykin/better-cpp-syntax/.
+- Uses GNU clang-format for code formatting. Ships with version 19.1.5 binaries.
 
 ## Development
 
