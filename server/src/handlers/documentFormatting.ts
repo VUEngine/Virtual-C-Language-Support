@@ -24,10 +24,11 @@ export const onDocumentFormatting = async (params: DocumentFormattingParams): Pr
 	const stringifiedConfig = formatFileFound
 		? `file:${formatFilePath}`
 		: JSON.stringify(getStyle(params.options)).replace(/"/g, '').replace(/:/g, ': ').replace(/,/g, ', ');
+	const preparedDocumentContent = documentContent.replace(/\\0/g, '[[[NULLBYTE]]]').replace(/"/g, '\\"');
 
 	try {
 		const { stdout, stderr } = await asyncExec(
-			`echo "${documentContent.replace(/"/g, '\\"')}" | ${clangFormatPath ?? "clang-format"} --assume-filename=${filename} --style="${stringifiedConfig}"`
+			`echo "${preparedDocumentContent}" | ${clangFormatPath ?? "clang-format"} --assume-filename=${filename} --style="${stringifiedConfig}"`
 		);
 		if (stderr) {
 			connection.console.error(stderr);
@@ -45,7 +46,7 @@ export const onDocumentFormatting = async (params: DocumentFormattingParams): Pr
 						character: lastLineLength,
 					},
 				},
-				newText: stdout
+				newText: stdout.replace(/\[\[\[NULLBYTE\]\]\]/g, '\\0')
 			}];
 		}
 	} catch (e) {
