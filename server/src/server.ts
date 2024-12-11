@@ -15,6 +15,7 @@ import {
 import { onCompletion } from './handlers/completion';
 import { onDefinition } from './handlers/definition';
 import { onDocumentFormatting } from './handlers/documentFormatting';
+import { onDocumentSymbol } from './handlers/documentSymbol';
 import { onSignatureHelp, Signature } from './handlers/signatureHelp';
 
 export const connection = createConnection(ProposedFeatures.all);
@@ -67,6 +68,7 @@ connection.onInitialize((params: InitializeParams) => {
 			},
 			definitionProvider: {},
 			documentFormattingProvider: {},
+			documentSymbolProvider: {},
 			signatureHelpProvider: {
 				triggerCharacters: [
 					"("
@@ -103,26 +105,19 @@ connection.onInitialized(() => {
 			installedPlugins = JSON.parse(param);
 		}
 	});
-	/*
-		connection.sendRequest("workspace/workspaceFolders", (param: WorkspaceFolder[] | null) => {
-			if (typeof param === 'string') {
-				installedPlugins = JSON.parse(param);
-			}
-		});
-	*/
 
-	const binBasePath = path.join(__dirname, "..", "..", "..", "bin");
-	clangFormatPath = path.join(binBasePath, "linux", "clang-format");
+	const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
+	clangFormatPath = path.join(binBasePath, "linux", "clang-format", "clang-format");
 	switch (process.platform) {
 		case "darwin":
 			{
 				const arch = process.arch === "x64" ? "x86_64" : "arm64";
-				clangFormatPath = path.join(binBasePath, "osx", arch, "clang-format");
+				clangFormatPath = path.join(binBasePath, "osx", "clang-format", arch, "clang-format");
 				break;
 			}
 		case "win32":
 			{
-				clangFormatPath = path.join(binBasePath, "win", "clang-format.exe");
+				clangFormatPath = path.join(binBasePath, "win", "clang-format", "clang-format.exe");
 				break;
 			}
 	}
@@ -141,6 +136,7 @@ connection.onInitialized(() => {
 
 connection.onCompletion(onCompletion);
 connection.onDocumentFormatting(onDocumentFormatting);
+connection.onDocumentSymbol(onDocumentSymbol);
 connection.onDefinition(onDefinition);
 connection.onSignatureHelp(onSignatureHelp);
 

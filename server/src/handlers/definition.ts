@@ -1,6 +1,6 @@
+import * as path from 'path';
 import { Location, LocationLink, TypeDefinitionParams } from 'vscode-languageserver';
 import { connection, getDocumentText, staticDefinitionData } from '../server';
-import path = require('path');
 
 export const onDefinition = async (params: TypeDefinitionParams): Promise<Location | Location[] | LocationLink[] | null> => {
 	const documentContent = getDocumentText(params.textDocument.uri);
