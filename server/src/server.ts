@@ -60,7 +60,7 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities: {
 			completionProvider: {
 				triggerCharacters: [
-					":", "/"
+					":"
 				],
 				completionItem: {
 					labelDetailsSupport: true,
@@ -68,6 +68,15 @@ connection.onInitialize((params: InitializeParams) => {
 			},
 			definitionProvider: {},
 			documentFormattingProvider: {},
+			documentOnTypeFormattingProvider: {
+				firstTriggerCharacter: "(",
+				moreTriggerCharacter: [
+					"{", ";", ","
+				]
+			},
+			documentRangeFormattingProvider: {
+				rangesSupport: false,
+			},
 			documentSymbolProvider: {},
 			signatureHelpProvider: {
 				triggerCharacters: [
@@ -75,6 +84,7 @@ connection.onInitialize((params: InitializeParams) => {
 				],
 			},
 			textDocumentSync: TextDocumentSyncKind.Incremental,
+			// typeHierarchyProvider: {},
 			workspace: hasWorkspaceFolderCapability
 				? {
 					workspaceFolders: {
@@ -136,9 +146,14 @@ connection.onInitialized(() => {
 
 connection.onCompletion(onCompletion);
 connection.onDocumentFormatting(onDocumentFormatting);
+connection.onDocumentRangeFormatting(onDocumentFormatting);
+connection.onDocumentOnTypeFormatting(onDocumentFormatting);
 connection.onDocumentSymbol(onDocumentSymbol);
 connection.onDefinition(onDefinition);
 connection.onSignatureHelp(onSignatureHelp);
+// connection.languages.typeHierarchy.onSupertypes(onSupertypes);
+// connection.languages.typeHierarchy.onSubtypes(onSubtypes);
+// connection.languages.typeHierarchy.onPrepare(onPrepare);
 
 documents.listen(connection);
 connection.listen();

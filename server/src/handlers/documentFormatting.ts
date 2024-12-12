@@ -1,13 +1,16 @@
 import { exec } from 'child_process';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
-import { DocumentFormattingParams, FormattingOptions } from 'vscode-languageserver';
+import { DocumentFormattingParams, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions } from 'vscode-languageserver';
 import { TextEdit } from 'vscode-languageserver-textdocument';
 import { clangFormatPath, connection, getDocumentText, workspaceRoot } from '../server';
-import * as fs from 'fs';
 const asyncExec = util.promisify(exec);
 
-export const onDocumentFormatting = async (params: DocumentFormattingParams): Promise<TextEdit[] | null> => {
+export const onDocumentFormatting = async (params: DocumentFormattingParams | DocumentRangeFormattingParams | DocumentOnTypeFormattingParams): Promise<TextEdit[] | null> =>
+	formatDocument(params as DocumentFormattingParams & DocumentRangeFormattingParams & DocumentOnTypeFormattingParams);
+
+export const formatDocument = async (params: DocumentFormattingParams & DocumentRangeFormattingParams & DocumentOnTypeFormattingParams): Promise<TextEdit[] | null> => {
 	const extname = path.extname(params.textDocument.uri);
 	if (![".c", ".h"].includes(extname)) {
 		return null;
@@ -21,6 +24,12 @@ export const onDocumentFormatting = async (params: DocumentFormattingParams): Pr
 	const lines = documentContent.split("\n");
 	const numLines = lines.length;
 	const lastLineLength = lines[lines.length - 1].length;
+	const linesParam = params.range
+		? ` --lines=${params.range.start.line}:${params.range.end.line}`
+		: params.position
+			? ` --lines=${params.position.line}:${params.position.line + 2}`
+			: "";
+
 	const stringifiedConfig = formatFileFound
 		? `file:${formatFilePath}`
 		: JSON.stringify(getStyle(params.options)).replace(/"/g, '').replace(/:/g, ': ').replace(/,/g, ', ');
@@ -28,7 +37,7 @@ export const onDocumentFormatting = async (params: DocumentFormattingParams): Pr
 
 	try {
 		const { stdout, stderr } = await asyncExec(
-			`echo "${preparedDocumentContent}" | ${clangFormatPath ?? "clang-format"} --assume-filename=${filename} --style="${stringifiedConfig}"`
+			`echo "${preparedDocumentContent}" | ${clangFormatPath ?? "clang-format"}${linesParam} --assume-filename=${filename} --style="${stringifiedConfig}"`
 		);
 		if (stderr) {
 			connection.console.error(stderr);
