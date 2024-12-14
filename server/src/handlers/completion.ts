@@ -1,7 +1,7 @@
 import * as path from 'path';
-import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, InsertTextFormat, Position } from 'vscode-languageserver';
+import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, InsertTextFormat, MarkupKind, Position } from 'vscode-languageserver';
 import { Range } from 'vscode-languageserver-textdocument';
-import { getDocumentText, staticCompletionData } from '../server';
+import { getDocumentText, staticData } from '../server';
 
 export const onCompletion = (params: CompletionParams): CompletionList => {
 	const uriBasename = path.parse(params.textDocument.uri).name;
@@ -21,8 +21,68 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 			insertText: getDocCommentSnippet(uriBasename, nextLine),
 			insertTextFormat: InsertTextFormat.Snippet
 		},
-		...staticCompletionData,
 	];
+
+	Object.values(staticData.classes).forEach(c => {
+		allCompletionItems.push({
+			label: c.name,
+			labelDetails: {
+				description: c.__contributor
+			},
+			kind: CompletionItemKind.Class,
+			detail: `(class) ${c.name}`,
+			documentation: {
+				kind: MarkupKind.Markdown,
+				value: c.description,
+			}
+		});
+
+		c.methods.forEach(m => {
+			allCompletionItems.push({
+				label: m.qualifiedname,
+				labelDetails: {
+					description: c.__contributor
+				},
+				kind: CompletionItemKind.Method,
+				detail: `(method) ${m.definition}${m.argsstring}`,
+				documentation: {
+					kind: MarkupKind.Markdown,
+					value: m.description + m.paramDocs,
+				}
+			});
+		});
+
+		c.typedefs.forEach(t => {
+			allCompletionItems.push({
+				label: t.name,
+				labelDetails: {
+					description: c.__contributor
+				},
+				kind: CompletionItemKind.Interface,
+				detail: `(typedef) ${t.name}`,
+				documentation: {
+					kind: MarkupKind.Markdown,
+					value: t.description,
+				}
+			});
+		});
+
+		c.enums.forEach(e => {
+			allCompletionItems.push({
+				label: e.name,
+				labelDetails: {
+					description: c.__contributor
+				},
+				kind: CompletionItemKind.Enum,
+				detail: `(enum) ${e.name}`,
+				documentation: {
+					kind: MarkupKind.Markdown,
+					value: e.description,
+				}
+			});
+		});
+	});
+
 
 	const replaceStartPosition: Position = {
 		line: params.position.line,

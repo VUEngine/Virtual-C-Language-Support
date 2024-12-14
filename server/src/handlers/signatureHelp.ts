@@ -1,5 +1,5 @@
 import { ParameterInformation, SignatureHelp, SignatureHelpParams } from 'vscode-languageserver';
-import { getDocumentText, staticSignaturesData } from '../server';
+import { getDocumentText, staticData } from '../server';
 
 export interface Signature {
 	signature: string,
@@ -14,18 +14,23 @@ export const onSignatureHelp = (params: SignatureHelpParams): SignatureHelp | nu
 	const currentMethod = lineUntilCursor.slice(0, lineUntilCursorArgsStartPosition).split(/[\s]+/).pop();
 	const activeParameter = lineUntilCursor.slice(lineUntilCursorArgsStartPosition).split(",").length - 1;
 
-	if (!currentMethod || staticSignaturesData[currentMethod] === undefined) {
-		return null;
-	}
+	let result: SignatureHelp | null = null;
+	Object.values(staticData.classes).forEach(c => {
+		c.methods.forEach(m => {
+			if (!result && m.qualifiedname === currentMethod) {
+				result = {
+					signatures: [{
+						label: m.definition + m.argsstring,
+						parameters: m.parameters.map(p => ({
+							label: p.name,
+							documentation: p.description,
+						})),
+						activeParameter,
+					}]
+				};
+			}
+		});
+	});
 
-	// TODO: polymorphism?
-	const foundSignature = staticSignaturesData[currentMethod];
-
-	return {
-		signatures: [{
-			label: foundSignature.signature,
-			parameters: foundSignature.parameters,
-			activeParameter,
-		}]
-	};
+	return result;
 };

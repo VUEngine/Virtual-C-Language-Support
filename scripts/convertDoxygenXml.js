@@ -209,6 +209,45 @@ const processData = (data, basePath) => {
 					memberData.argsstring = completeArgs;
 					memberData.paramDocs = getParamsDocs(member, className, includeThis);
 
+					let params = member.param;
+					if (params !== undefined && !Array.isArray(params)) {
+						params = [params];
+					}
+				
+					let docs = member.detaileddescription?.para?.parameterlist?.parameteritem;
+					if (docs !== undefined && !Array.isArray(docs)) {
+						docs = [docs];
+					}
+
+					memberData.parameters = [];
+					if (includeThis) {
+						memberData.parameters.push({
+							name: className + " this",
+							description: className + " Instance"
+						});
+					}
+					let paramIndex = 0;
+					const args = completeArgs.slice(1, -1).split(",").map(a => a.trim());
+					params?.forEach(param => {
+						const paramName = param.declname?._text ?? param.defname?._text;
+						if (paramName === undefined) {
+							return;
+						}
+						paramIndex++;
+				
+						let doc;
+						if (docs) {
+							docs.filter(d => d.parameternamelist?.parametername?._text === paramName).map(d => {
+								doc = parseDescription(d.parameterdescription);
+							});
+						}
+				
+						memberData.parameters.push({
+							name: args[paramIndex],
+							description: doc
+						});
+					});
+
 					classData.methods.push(memberData);
 				} else if (member._attributes.kind === "typedef") {
 					classData.typedefs.push(memberData);

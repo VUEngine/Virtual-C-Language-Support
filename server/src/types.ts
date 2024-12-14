@@ -1,4 +1,4 @@
-export interface Location {
+export interface LocationData {
 	header: {
 		uri: string,
 		line: number,
@@ -15,9 +15,14 @@ export interface MemberData {
 	name: string
 	qualifiedname: string
 	description: string
-	location: Location
+	location: LocationData
 	prot: string
 	static: boolean
+}
+
+export interface ParameterData {
+	name: string
+	description: string
 }
 
 export interface MethodData extends MemberData {
@@ -25,6 +30,7 @@ export interface MethodData extends MemberData {
 	returnType: string
 	argsstring: string
 	paramDocs: string
+	parameters: ParameterData[]
 }
 
 export interface ClassData {
@@ -33,7 +39,7 @@ export interface ClassData {
 	name: string
 	base?: string
 	description: string
-	location: Location
+	location: LocationData
 	methods: MethodData[]
 	variables: MemberData[]
 	enums: MemberData[]

@@ -2,9 +2,9 @@ import * as path from 'path';
 import { DocumentSymbol, DocumentSymbolParams, SymbolKind } from 'vscode-languageserver';
 import { Range } from 'vscode-languageserver-textdocument';
 import { connection, staticData } from '../server';
-import { Location } from '../types';
+import { LocationData } from '../types';
 
-const getRanges = (location: Location, uri: string): { range: Range, selectionRange: Range } => {
+const getRanges = (location: LocationData, uri: string): { range: Range, selectionRange: Range } => {
 	if (location.body?.uri === uri) {
 		return {
 			range: {
