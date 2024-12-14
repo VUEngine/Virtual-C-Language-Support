@@ -17,10 +17,12 @@ import { onDefinition } from './handlers/definition';
 import { onDocumentFormatting } from './handlers/documentFormatting';
 import { onDocumentSymbol } from './handlers/documentSymbol';
 import { onSignatureHelp, Signature } from './handlers/signatureHelp';
+import { ProcessedData } from './types';
 
 export const connection = createConnection(ProposedFeatures.all);
 export const documents = new TextDocuments(TextDocument);
 
+export let staticData: ProcessedData;
 export let staticCompletionData: CompletionItem[] = [];
 export let staticDefinitionData: Record<string, Location> = {};
 export let staticSignaturesData: Record<string, Signature> = {};
@@ -133,6 +135,9 @@ connection.onInitialized(() => {
 	}
 
 	const baseDataPath = path.join(__dirname, "..", "..", "..", "data");
+	const dataFilePath = path.join(baseDataPath, "data.json");
+	const dataFileData = fs.readFileSync(dataFilePath);
+	staticData = JSON.parse(dataFileData.toString()) as ProcessedData;
 	const completionFilePath = path.join(baseDataPath, "completion.json");
 	const completionFileData = fs.readFileSync(completionFilePath);
 	staticCompletionData = JSON.parse(completionFileData.toString()) as CompletionItem[];

@@ -80,34 +80,6 @@ const parseDescriptions = (item) => {
 	return lines.join("\n\n").trim();
 };
 
-/*
-const prepareSnippetParams = (param, includeThis) => {
-	let result = "(";
-
-	if (includeThis) {
-		result += "${1:this}";
-	}
-
-	let params = param;
-	if (params !== undefined && !Array.isArray(params)) {
-		params = [params];
-	}
-
-	let pos = 2;
-	params?.forEach(param => {
-		const paramName = param.declname?._text ?? param.defname?._text;
-		if (paramName === undefined) {
-			return;
-		}
-		
-		result += ", ${" + pos + ":" + paramName + "}";
-		pos++;
-	});
-
-	return result + ")";
-};
-*/
-
 const getParamsDocs = (member, className, includeThis) => {
 	let result = "";
 
@@ -149,76 +121,109 @@ const getParamsDocs = (member, className, includeThis) => {
 	return result + "\n\n";
 };
 
-const extractCompletionData = (data) => {
-	const result = [];
+const processData = (data, basePath) => {
+	const result = {
+		classes: {}
+	};
 
 	Object.values(data.classes).forEach(cls => {
 		const className = cls.compoundname._text;
-
-		// add class itself
-		result.push({
-			label: className,
-			labelDetails: {
-				description: cls.__contributor,
+		const bodyStart = parseInt(cls.location._attributes.bodystart);
+		const bodyEnd = parseInt(cls.location._attributes.bodyend);
+		const classData = {
+			__contributor: cls.__contributor,
+			name: className,
+			base: cls.basecompoundref?._text,
+			description: parseDescriptions(cls),
+			location: {
+				header: {
+					uri: path.relative(basePath, cls.location._attributes.file),
+					line: parseInt(cls.location._attributes.line),
+					column: parseInt(cls.location._attributes.column),
+				},
+				body: cls.location._attributes.bodyfile 
+					? {
+						uri: path.relative(basePath, cls.location._attributes.bodyfile),
+						start: bodyStart,
+						end: bodyEnd !== -1 ? bodyEnd : bodyStart,
+					}
+					: undefined,
 			},
-			kind: 7,
-			detail: "(class) " + className,
-			documentation: {
-				kind: "markdown",
-				value: parseDescriptions(cls),
-			},
-		});
+			methods: [],
+			variables: [],
+			enums: [],
+			typedefs: [],
+		};
 
 		let sectiondefs = cls.sectiondef;
 		if (!Array.isArray(cls.sectiondef)) {
 			sectiondefs = [sectiondefs];
 		}
 
-		// add methods
 		sectiondefs.forEach(sectiondef => {
-			if (!["public-func", "public-static-func"].includes(sectiondef._attributes.kind)) {
-				return;
-			}
-
 			let sectiondefmemberdef = sectiondef.memberdef;
 			if (!Array.isArray(sectiondefmemberdef)) {
 				sectiondefmemberdef = [sectiondefmemberdef];
 			}
 			sectiondefmemberdef.forEach(member => {
-				if (member.name._text === "constructor" || member.name._text === "destructor") {
-					return;
-				}
+				const bodyStart = parseInt(member.location._attributes.bodystart);
+				const bodyEnd = parseInt(member.location._attributes.bodyend);
+				const memberData = {
+					name: member.name._text,
+					qualifiedname: member.qualifiedname._text,
+					description: parseDescriptions(member),			
+					location: {
+						header: {
+							uri: path.relative(basePath, member.location._attributes.file),
+							line: parseInt(member.location._attributes.line),
+							column: parseInt(member.location._attributes.column),
+						},
+						body: member.location._attributes.bodyfile
+							? {
+								uri: path.relative(basePath, member.location._attributes.bodyfile),
+								start: bodyStart,
+								end: bodyEnd !== -1 ? bodyEnd : bodyStart,
+							}
+							: undefined,
+					},
+					prot: member._attributes.prot,
+					static: member._attributes.static === "yes",
+				};
 
-				const includeThis = member.name._text !== "getInstance";
-				const cleanedArgsString = member.argsstring._text.replace(")=0", ")");
+				if (member._attributes.kind === "function") {
+					memberData.definition = member.definition._text;
+					memberData.returnType = member.type._text;
 
-				let completeArgs = "(";
-				if (includeThis) {
-					completeArgs +=  className + " this";
-					if (cleanedArgsString.length > 2) {
-						completeArgs += ", ";
+					const includeThis = member.name._text !== "getInstance" && !memberData.static;
+					const cleanedArgsString = member.argsstring._text.replace(")=0", ")");
+
+					let completeArgs = "(";
+					if (includeThis) {
+						completeArgs +=  className + " this";
+						if (cleanedArgsString.length > 2) {
+							completeArgs += ", ";
+						}
 					}
+
+					completeArgs += cleanedArgsString.slice(1);
+					memberData.argsstring = completeArgs;
+					memberData.paramDocs = getParamsDocs(member, className, includeThis);
+
+					classData.methods.push(memberData);
+				} else if (member._attributes.kind === "typedef") {
+					classData.typedefs.push(memberData);
+				} else if (member._attributes.kind === "enum") {
+					classData.enums.push(memberData);
+				} else if (member._attributes.kind === "variable") {
+					classData.variables.push(memberData);
+				} else {
+					console.error("Unrecognized kind", member._attributes.kind);
 				}
 
-				completeArgs += cleanedArgsString.slice(1);
-				const detail = "(method) " + member.definition._text + completeArgs;
-
-				result.push({
-					label: member.qualifiedname._text,
-					labelDetails: {
-						description: cls.__contributor,
-					},
-					kind: 2,
-					detail: detail,
-					documentation: {
-						kind: "markdown",
-						value: parseDescriptions(member) + getParamsDocs(member, className, includeThis),
-					},
-					// insertText: member.qualifiedname._text + prepareSnippetParams(member.param, includeThis),
-					// insertTextFormat: 2,
-				});
 			});
 		});
+
+		result.classes[className] = classData;
 	});
 
 	// add structs
@@ -228,146 +233,6 @@ const extractCompletionData = (data) => {
 		// ...
 	});
 	*/
-
-	return result;
-};
-
-const extractLocationData = (data, basePath) => {
-	const result = {};
-
-	Object.values(data.classes).forEach(cls => {
-		const className = cls.compoundname._text;
-
-		// add class itself
-		const line = parseInt(cls.location._attributes.line);
-		result[className] = {
-			uri: path.relative(basePath, cls.location._attributes.file),
-			range: {
-				start: {
-					line: line - 1,
-					character: 0,
-				},
-				end: {
-					line: line,
-					character: 0,
-				},
-			}
-		};
-
-		let sectiondefs = cls.sectiondef;
-		if (!Array.isArray(cls.sectiondef)) {
-			sectiondefs = [sectiondefs];
-		}
-
-		// add methods
-		sectiondefs.forEach(sectiondef => {
-			if (!["public-func", "public-static-func", "private-func", "private-static-func"].includes(sectiondef._attributes.kind)) {
-				return;
-			}
-
-			let sectiondefmemberdef = sectiondef.memberdef;
-			if (!Array.isArray(sectiondefmemberdef)) {
-				sectiondefmemberdef = [sectiondefmemberdef];
-			}
-			sectiondefmemberdef.forEach(member => {
-				result[member.qualifiedname._text] = {
-					uri: path.relative(basePath, member.location._attributes.bodyfile ?? member.location._attributes.file),
-					range: {
-						start: {
-							line: parseInt(member.location._attributes.bodystart ?? member.location._attributes.line) - 1,
-							character: 0,
-						},
-						end: {
-							line: parseInt(member.location._attributes.bodyend ?? member.location._attributes.line),
-							character: 0,
-						},
-					}
-				};
-			});
-		});
-	});
-
-	return result;
-};
-
-const extractSignaturesData = (data) => {
-	const result = {};
-
-	Object.values(data.classes).forEach(cls => {
-		const className = cls.compoundname._text;
-
-		let sectiondefs = cls.sectiondef;
-		if (!Array.isArray(cls.sectiondef)) {
-			sectiondefs = [sectiondefs];
-		}
-
-		sectiondefs.forEach(sectiondef => {
-			if (!["public-func", "public-static-func", "private-func", "private-static-func"].includes(sectiondef._attributes.kind)) {
-				return;
-			}
-
-			let sectiondefmemberdef = sectiondef.memberdef;
-			if (!Array.isArray(sectiondefmemberdef)) {
-				sectiondefmemberdef = [sectiondefmemberdef];
-			}
-
-			sectiondefmemberdef.forEach(member => {
-				const cleanedArgsString = member.argsstring._text.replace(")=0", ")");
-
-				if (member.name._text === "getInstance") {
-					return;
-				}
-
-				let completeArgs = "(" +  className + " this";
-				if (cleanedArgsString.length > 2) {
-					completeArgs += ", ";
-				}
-				completeArgs += cleanedArgsString.slice(1);
-
-				let params = member.param;
-				if (params !== undefined && !Array.isArray(params)) {
-					params = [params];
-				}
-			
-				let docs = member.detaileddescription?.para?.parameterlist?.parameteritem;
-				if (docs !== undefined && !Array.isArray(docs)) {
-					docs = [docs];
-				}
-			
-				const parameters = [{
-					label: className + " this",
-					documentation: className + " Instance"
-				}];
-				let paramIndex = 0;
-				const args = completeArgs.slice(1, -1).split(",").map(a => a.trim());
-				params?.forEach(param => {
-					const paramName = param.declname?._text ?? param.defname?._text;
-					if (paramName === undefined) {
-						return;
-					}
-
-					paramIndex++;
-			
-					let doc;
-					if (docs) {
-						docs.filter(d => d.parameternamelist?.parametername?._text === paramName).map(d => {
-							doc = parseDescription(d.parameterdescription);
-						});
-					}
-			
-					parameters.push({
-						label: args[paramIndex],
-						documentation: doc
-					});
-				});
-
-				result[member.qualifiedname._text] = {
-					signature: member.definition._text + completeArgs,
-					parameters,
-				};
-			});
-		});
-	});
 
 	return result;
 };
@@ -385,21 +250,11 @@ const docData = {
 	// "structs": coreStructs,
 };
 
+const processedOutputPath = path.join(outputBasePath, "data.json");
+const processedData = processData(docData, coreBasePath);
+fs.writeFileSync(processedOutputPath, JSON.stringify(processedData));
+
 /*/
 const debugDumpPath = path.join(outputBasePath, "doxygen.json");
 fs.writeFileSync(debugDumpPath, JSON.stringify(docData, null, 4));
 /**/
-
-const completionOutputPath = path.join(outputBasePath, "completion.json");
-const completionData = extractCompletionData(docData);
-fs.writeFileSync(completionOutputPath, JSON.stringify(completionData));
-
-const definitionLocationOutputPath = path.join(outputBasePath, "definition.json");
-const definitionLocationData = extractLocationData(docData, coreBasePath);
-fs.writeFileSync(definitionLocationOutputPath, JSON.stringify(definitionLocationData));
-
-const signaturesOutputPath = path.join(outputBasePath, "signatures.json");
-const signaturesData = extractSignaturesData(docData);
-fs.writeFileSync(signaturesOutputPath, JSON.stringify(signaturesData));
-
-
