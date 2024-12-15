@@ -58,7 +58,7 @@
     "compile": "npm run esbuild -- --sourcemap",
     "watch": "npm run esbuild -- --sourcemap --watch",
     "lint": "eslint",
-    "package": "npm run compile && vsce package",
+    "package": "npm run compile && vsce package --allow-star-activation",
     "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
   },
   "devDependencies": {
