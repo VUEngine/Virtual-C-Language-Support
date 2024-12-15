@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, InsertTextFormat, MarkupKind, Position } from 'vscode-languageserver';
 import { Range } from 'vscode-languageserver-textdocument';
-import { getDocumentText, staticData } from '../server';
+import { getDocumentText, processedData } from '../server';
 
 export const onCompletion = (params: CompletionParams): CompletionList => {
 	const uriBasename = path.parse(params.textDocument.uri).name;
@@ -23,66 +23,68 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 		},
 	];
 
-	Object.values(staticData.classes).forEach(c => {
-		allCompletionItems.push({
-			label: c.name,
-			labelDetails: {
-				description: c.__contributor
-			},
-			kind: CompletionItemKind.Class,
-			detail: `(class) ${c.name}`,
-			documentation: {
-				kind: MarkupKind.Markdown,
-				value: c.description,
-			}
-		});
-
-		c.methods.forEach(m => {
+	Object.keys(processedData).forEach(key => {
+		const contributor = path.basename(key);
+		Object.values(processedData[key]).forEach(c => {
 			allCompletionItems.push({
-				label: m.qualifiedname,
+				label: c.name,
 				labelDetails: {
-					description: c.__contributor
+					description: contributor
 				},
-				kind: CompletionItemKind.Method,
-				detail: `(method) ${m.definition}${m.argsstring}`,
+				kind: CompletionItemKind.Class,
+				detail: `(class) ${c.name}`,
 				documentation: {
 					kind: MarkupKind.Markdown,
-					value: m.description + m.paramDocs,
+					value: c.description,
 				}
 			});
-		});
 
-		c.typedefs.forEach(t => {
-			allCompletionItems.push({
-				label: t.name,
-				labelDetails: {
-					description: c.__contributor
-				},
-				kind: CompletionItemKind.Interface,
-				detail: `(typedef) ${t.name}`,
-				documentation: {
-					kind: MarkupKind.Markdown,
-					value: t.description,
-				}
+			c.methods.forEach(m => {
+				allCompletionItems.push({
+					label: m.qualifiedname,
+					labelDetails: {
+						description: contributor
+					},
+					kind: CompletionItemKind.Method,
+					detail: `(method) ${m.definition}${m.argsstring}`,
+					documentation: {
+						kind: MarkupKind.Markdown,
+						value: m.description + m.paramDocs,
+					}
+				});
 			});
-		});
 
-		c.enums.forEach(e => {
-			allCompletionItems.push({
-				label: e.name,
-				labelDetails: {
-					description: c.__contributor
-				},
-				kind: CompletionItemKind.Enum,
-				detail: `(enum) ${e.name}`,
-				documentation: {
-					kind: MarkupKind.Markdown,
-					value: e.description,
-				}
+			c.typedefs.forEach(t => {
+				allCompletionItems.push({
+					label: t.name,
+					labelDetails: {
+						description: contributor
+					},
+					kind: CompletionItemKind.Interface,
+					detail: `(typedef) ${t.name}`,
+					documentation: {
+						kind: MarkupKind.Markdown,
+						value: t.description,
+					}
+				});
+			});
+
+			c.enums.forEach(e => {
+				allCompletionItems.push({
+					label: e.name,
+					labelDetails: {
+						description: contributor
+					},
+					kind: CompletionItemKind.Enum,
+					detail: `(enum) ${e.name}`,
+					documentation: {
+						kind: MarkupKind.Markdown,
+						value: e.description,
+					}
+				});
 			});
 		});
 	});
-
 
 	const replaceStartPosition: Position = {
 		line: params.position.line,
@@ -115,7 +117,7 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 
 	return {
 		isIncomplete: true,
-		items: filteredKnownItems.slice(0, 1000),
+		items: filteredKnownItems,
 	};
 };
 

@@ -21,9 +21,7 @@
     "vscode": "^1.75.0"
   },
   "activationEvents": [
-    "onLanguage:vc",
-    "onLanguage:c",
-    "onLanguage:cpp"
+    "*"
   ],
   "contributes": {
     "languages": [

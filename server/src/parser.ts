@@ -1,43 +1,119 @@
-const fs = require("fs");
-const path = require("path");
-const convert = require('xml-js');
+import { exec } from 'child_process';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import * as util from 'util';
+import { DidChangeWatchedFilesParams, WorkspaceFolder } from 'vscode-languageserver';
+import * as convert from 'xml-js';
+import { connection, doxyfilePath, doxygenPath, processedData, workspaceRoot } from './server';
+const asyncExec = util.promisify(exec);
 
+export const isBusy: Record<string, boolean> = {};
 
-const findInPath = (searchPath, start, contributor) => {
-	const result = {};
+const tempBasePath = path.join(os.tmpdir(), "virtual-c-ls");
+if (!fs.existsSync(tempBasePath)) {
+	fs.mkdirSync(tempBasePath);
+}
 
-    if (!fs.existsSync(searchPath)) {
-        return result;
-    }
-    const files = fs.readdirSync(searchPath);
+export const onDidChangeWatchedFiles = async (params: DidChangeWatchedFilesParams) => {
+	const workspaceFolders = await connection.workspace.getWorkspaceFolders() ?? [];
+	params.changes.forEach(c => {
+		workspaceFolders.forEach(w => {
+			if (c.uri.startsWith(w.uri)) {
+				parse(w.uri.replace("file://", ""));
+			}
+		});
+	});
+};
+
+export const parseWorkspace = (workspaceFolders: WorkspaceFolder[]) => {
+	// const enginePath = await connection.workspace.getConfiguration('build.engine.core.path');
+	workspaceFolders.forEach(f => {
+		parse(f.uri.replace("file://", ""));
+	});
+};
+
+export const parse = async (workspaceFolder: string) => {
+	if (isBusy[workspaceFolder]) {
+		return;
+	}
+
+	isBusy[workspaceFolder] = true;
+	const tempPath = path.join(tempBasePath, Buffer.from(workspaceFolder).toString('base64'));
+	if (fs.existsSync(tempPath)) {
+		fs.rmSync(tempPath, { recursive: true });
+	}
+
+	let inputFolders = '';
+	if (path.basename(workspaceFolder) === "plugins") {
+		const gameConfigFilePath = path.join(workspaceRoot, 'config', 'GameConfig');
+		let installedPlugins: string[] = [];
+		if (fs.existsSync(gameConfigFilePath)) {
+			installedPlugins = Object.keys(
+				JSON.parse(fs.readFileSync(gameConfigFilePath).toString())?.plugins ?? {}
+			);
+		}
+		inputFolders = installedPlugins
+			.filter(ip => ip.startsWith('vuengine//'))
+			.map(ip => path.join(workspaceFolder, ip.replace('vuengine//', '')))
+			.join(",");
+	} else {
+		inputFolders = workspaceFolder;
+	}
+
+	if (inputFolders !== '') {
+		try {
+			await asyncExec(
+				`( cat ${doxyfilePath} ; echo "OUTPUT_DIRECTORY=${tempPath}\nINPUT=${inputFolders}" ) | ${doxygenPath} -`
+			);
+			// connection.console.error(stderr);
+			const tempXmlPath = path.join(tempPath, 'xml');
+			const classes = findInPath(tempXmlPath, "class_");
+			processedData[workspaceFolder] = processData(classes, workspaceFolder);
+		} catch (e) {
+			connection.console.error(e + '');
+		}
+	}
+
+	isBusy[workspaceFolder] = false;
+};
+
+const findInPath = (searchPath: string, start: string) => {
+	const result: Record<string, object> = {};
+
+	if (!fs.existsSync(searchPath)) {
+		return result;
+	}
+	const files = fs.readdirSync(searchPath);
 	files.map(f => {
 		const filePath = path.join(searchPath, f);
 		const basename = path.basename(filePath);
-        if (basename.startsWith(start)) {
+		if (basename.startsWith(start)) {
 			const content = fs.readFileSync(filePath);
-			const contentObject = convert.xml2js(content.toString(), {compact: true, spaces: 4}).doxygen.compounddef;
-			result[contentObject._attributes.id] = {
-				'__contributor': contributor,
-				...contentObject,
-			};
-        };
+			// @ts-expect-error LOL
+			const contentObject = convert.xml2js(content.toString(), { compact: true }).doxygen.compounddef;
+			result[contentObject._attributes.id] = contentObject;
+		};
 	});
 
 	return result;
 };
 
-const parseDescription = (d) => {
-	const lines = [];
+const parseDescription = (d: object) => {
+	const lines: string[] = [];
 
+	// @ts-expect-error LOL
 	if (!d?.para) {
 		return lines;
 	}
 
+	// @ts-expect-error LOL
 	let paras = d.para;
 	if (!Array.isArray(paras)) {
 		paras = [paras];
 	}
 
+	// @ts-expect-error LOL
 	paras.forEach(para => {
 		let line = '';
 
@@ -47,11 +123,11 @@ const parseDescription = (d) => {
 			} else if (para._text) {
 				line += para._text;
 			}
-	
+
 			if (para.ref) {
 				line += "`" + para.ref._text + "`";
 			}
-	
+
 			if (Array.isArray(para._text)) {
 				line += para._text[1];
 			}
@@ -59,7 +135,7 @@ const parseDescription = (d) => {
 			if (para.ref) {
 				line += "`" + para.ref._text + "`";
 			}
-	
+
 			if (para._text) {
 				line += para._text;
 			}
@@ -71,6 +147,7 @@ const parseDescription = (d) => {
 	return lines.join("\n\n").trim();
 };
 
+// @ts-expect-error LOL
 const parseDescriptions = (item) => {
 	const lines = [
 		parseDescription(item.briefdescription),
@@ -80,6 +157,7 @@ const parseDescriptions = (item) => {
 	return lines.join("\n\n").trim();
 };
 
+// @ts-expect-error LOL
 const getParamsDocs = (member, className, includeThis) => {
 	let result = "";
 
@@ -97,6 +175,7 @@ const getParamsDocs = (member, className, includeThis) => {
 		docs = [docs];
 	}
 
+	// @ts-expect-error LOL
 	params?.forEach(param => {
 		const paramName = param.declname?._text ?? param.defname?._text;
 		if (paramName === undefined) {
@@ -105,6 +184,7 @@ const getParamsDocs = (member, className, includeThis) => {
 
 		let doc = "";
 		if (docs) {
+			// @ts-expect-error LOL
 			docs.filter(d => d.parameternamelist?.parametername?._text === paramName).map(d => {
 				doc = ": " + parseDescription(d.parameterdescription);
 			});
@@ -121,17 +201,14 @@ const getParamsDocs = (member, className, includeThis) => {
 	return result + "\n\n";
 };
 
-const processData = (data, basePath) => {
-	const result = {
-		classes: {}
-	};
+const processData = (data: object, basePath: string) => {
+	const result = {};
 
-	Object.values(data.classes).forEach(cls => {
+	Object.values(data).forEach(cls => {
 		const className = cls.compoundname._text;
 		const bodyStart = parseInt(cls.location._attributes.bodystart);
 		const bodyEnd = parseInt(cls.location._attributes.bodyend);
 		const classData = {
-			__contributor: cls.__contributor,
 			name: className,
 			base: cls.basecompoundref?._text,
 			description: parseDescriptions(cls),
@@ -141,7 +218,7 @@ const processData = (data, basePath) => {
 					line: parseInt(cls.location._attributes.line),
 					column: parseInt(cls.location._attributes.column),
 				},
-				body: cls.location._attributes.bodyfile 
+				body: cls.location._attributes.bodyfile
 					? {
 						uri: path.relative(basePath, cls.location._attributes.bodyfile),
 						start: bodyStart,
@@ -160,18 +237,20 @@ const processData = (data, basePath) => {
 			sectiondefs = [sectiondefs];
 		}
 
+		// @ts-expect-error LOL
 		sectiondefs.forEach(sectiondef => {
 			let sectiondefmemberdef = sectiondef.memberdef;
 			if (!Array.isArray(sectiondefmemberdef)) {
 				sectiondefmemberdef = [sectiondefmemberdef];
 			}
+			// @ts-expect-error LOL
 			sectiondefmemberdef.forEach(member => {
 				const bodyStart = parseInt(member.location._attributes.bodystart);
 				const bodyEnd = parseInt(member.location._attributes.bodyend);
 				const memberData = {
 					name: member.name._text,
 					qualifiedname: member.qualifiedname._text,
-					description: parseDescriptions(member),			
+					description: parseDescriptions(member),
 					location: {
 						header: {
 							uri: path.relative(basePath, member.location._attributes.file),
@@ -191,7 +270,9 @@ const processData = (data, basePath) => {
 				};
 
 				if (member._attributes.kind === "function") {
+					// @ts-expect-error LOL
 					memberData.definition = member.definition._text;
+					// @ts-expect-error LOL
 					memberData.returnType = member.type._text;
 
 					const includeThis = member.name._text !== "getInstance" && !memberData.static;
@@ -199,28 +280,32 @@ const processData = (data, basePath) => {
 
 					let completeArgs = "(";
 					if (includeThis) {
-						completeArgs +=  className + " this";
+						completeArgs += className + " this";
 						if (cleanedArgsString.length > 2) {
 							completeArgs += ", ";
 						}
 					}
 
 					completeArgs += cleanedArgsString.slice(1);
+					// @ts-expect-error LOL
 					memberData.argsstring = completeArgs;
+					// @ts-expect-error LOL
 					memberData.paramDocs = getParamsDocs(member, className, includeThis);
 
 					let params = member.param;
 					if (params !== undefined && !Array.isArray(params)) {
 						params = [params];
 					}
-				
+
 					let docs = member.detaileddescription?.para?.parameterlist?.parameteritem;
 					if (docs !== undefined && !Array.isArray(docs)) {
 						docs = [docs];
 					}
 
+					// @ts-expect-error LOL
 					memberData.parameters = [];
 					if (includeThis) {
+						// @ts-expect-error LOL
 						memberData.parameters.push({
 							name: className + " this",
 							description: className + " Instance"
@@ -228,32 +313,39 @@ const processData = (data, basePath) => {
 					}
 					let paramIndex = 0;
 					const args = completeArgs.slice(1, -1).split(",").map(a => a.trim());
+					// @ts-expect-error LOL
 					params?.forEach(param => {
 						const paramName = param.declname?._text ?? param.defname?._text;
 						if (paramName === undefined) {
 							return;
 						}
 						paramIndex++;
-				
+
 						let doc;
 						if (docs) {
+							// @ts-expect-error LOL
 							docs.filter(d => d.parameternamelist?.parametername?._text === paramName).map(d => {
 								doc = parseDescription(d.parameterdescription);
 							});
 						}
-				
+
+						// @ts-expect-error LOL
 						memberData.parameters.push({
 							name: args[paramIndex],
 							description: doc
 						});
 					});
 
+					// @ts-expect-error LOL
 					classData.methods.push(memberData);
 				} else if (member._attributes.kind === "typedef") {
+					// @ts-expect-error LOL
 					classData.typedefs.push(memberData);
 				} else if (member._attributes.kind === "enum") {
+					// @ts-expect-error LOL
 					classData.enums.push(memberData);
 				} else if (member._attributes.kind === "variable") {
+					// @ts-expect-error LOL
 					classData.variables.push(memberData);
 				} else {
 					console.error("Unrecognized kind", member._attributes.kind);
@@ -262,38 +354,9 @@ const processData = (data, basePath) => {
 			});
 		});
 
-		result.classes[className] = classData;
+		// @ts-expect-error LOL
+		result[className] = classData;
 	});
-
-	// add structs
-	/*
-	Object.values(data.structs).forEach(struct => {
-		const structName = struct.compoundname._text;
-		// ...
-	});
-	*/
 
 	return result;
 };
-
-
-const vuengineBasePath = "/Users/chris/dev/vb/vuengine";
-let outputBasePath = path.join(__dirname, "..", "data");
-
-const coreBasePath = path.join(vuengineBasePath, "core");
-const coreXmlPath = path.join(coreBasePath, "doc", "xml");
-const coreClasses = findInPath(coreXmlPath, "class_", "core");
-// const coreStructs = findInPath(coreXmlPath, "struct_", "core");
-const docData = {
-	"classes": coreClasses,
-	// "structs": coreStructs,
-};
-
-const processedOutputPath = path.join(outputBasePath, "data.json");
-const processedData = processData(docData, coreBasePath);
-fs.writeFileSync(processedOutputPath, JSON.stringify(processedData));
-
-/*/
-const debugDumpPath = path.join(outputBasePath, "doxygen.json");
-fs.writeFileSync(debugDumpPath, JSON.stringify(docData, null, 4));
-/**/

@@ -1,5 +1,5 @@
 import { ParameterInformation, SignatureHelp, SignatureHelpParams } from 'vscode-languageserver';
-import { getDocumentText, staticData } from '../server';
+import { getDocumentText, processedData } from '../server';
 
 export interface Signature {
 	signature: string,
@@ -15,20 +15,22 @@ export const onSignatureHelp = (params: SignatureHelpParams): SignatureHelp | nu
 	const activeParameter = lineUntilCursor.slice(lineUntilCursorArgsStartPosition).split(",").length - 1;
 
 	let result: SignatureHelp | null = null;
-	Object.values(staticData.classes).forEach(c => {
-		c.methods.forEach(m => {
-			if (!result && m.qualifiedname === currentMethod) {
-				result = {
-					signatures: [{
-						label: m.definition + m.argsstring,
-						parameters: m.parameters.map(p => ({
-							label: p.name,
-							documentation: p.description,
-						})),
-						activeParameter,
-					}]
-				};
-			}
+	Object.keys(processedData).forEach(key => {
+		Object.values(processedData[key]).forEach(c => {
+			c.methods.forEach(m => {
+				if (!result && m.qualifiedname === currentMethod) {
+					result = {
+						signatures: [{
+							label: m.definition + m.argsstring,
+							parameters: m.parameters.map(p => ({
+								label: p.name,
+								documentation: p.description,
+							})),
+							activeParameter,
+						}]
+					};
+				}
+			});
 		});
 	});
 

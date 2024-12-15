@@ -34,8 +34,6 @@ export interface MethodData extends MemberData {
 }
 
 export interface ClassData {
-	__contributor: string
-	__subContributor?: string
 	name: string
 	base?: string
 	description: string
@@ -48,6 +46,4 @@ export interface ClassData {
 
 export type ClassDataMap = Record<string, ClassData>;
 
-export interface ProcessedData {
-	classes: ClassDataMap
-}
+export type ProcessedData = Record<string, ClassDataMap>;

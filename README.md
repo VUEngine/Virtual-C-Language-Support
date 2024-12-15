@@ -20,11 +20,10 @@ Contains the basic language definitions as well as a language server to provide 
 - Snippets
 - Syntax highlighting
 
-**Note**: this is a work in progress and the data needed for IntelliSense features is currently hardcoded for the latest version of VUEngine Core. Dynamic parsing will be added to the language server in a future version.
-
 ## Acknowledgements
 
 - Syntax definitions are based on https://github.com/microsoft/vscode/blob/main/extensions/cpp/syntaxes/cpp.tmLanguage.json, which in turn is based on https://github.com/jeff-hykin/better-cpp-syntax/.
+- Uses doxygen for code parsing.
 - Uses GNU clang-format for code formatting.
 
 ## Development

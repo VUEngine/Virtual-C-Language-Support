@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { ExtensionContext } from 'vscode';
+import { ExtensionContext, workspace } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
@@ -17,7 +17,11 @@ export function activate(context: ExtensionContext) {
 	const clientOptions: LanguageClientOptions = {
 		documentSelector: [
 			{ scheme: 'file', language: 'vc' },
-		]
+		],
+		synchronize: {
+			//fileEvents: workspace.createFileSystemWatcher('**'),
+			fileEvents: workspace.createFileSystemWatcher('**/{assets,headers,source}/**'),
+		}
 	};
 
 	client = new LanguageClient(
@@ -28,9 +32,6 @@ export function activate(context: ExtensionContext) {
 	);
 
 	client.start();
-
-	// TODO
-	client.sendRequest("installedPlugins", "[]");
 }
 
 export function deactivate(): Thenable<void> | undefined {

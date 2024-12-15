@@ -10,6 +10,7 @@ import {
 	TextDocuments,
 	TextDocumentSyncKind
 } from 'vscode-languageserver/node';
+import { onDidChangeWatchedFiles, parseWorkspace } from './parser';
 import { onCompletion } from './handlers/completion';
 import { onDefinition } from './handlers/definition';
 import { onDocumentFormatting } from './handlers/documentFormatting';
@@ -20,10 +21,36 @@ import { ProcessedData } from './types';
 export const connection = createConnection(ProposedFeatures.all);
 export const documents = new TextDocuments(TextDocument);
 
-export let staticData: ProcessedData;
+export const processedData: ProcessedData = {};
+export const doxyfilePath: string = path.join(__dirname, "..", "..", "..", "resources", "Doxyfile");
+export let doxygenPath: string;
 export let clangFormatPath: string;
-export let installedPlugins: string[] = [];
 export let workspaceRoot: string;
+
+const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
+doxygenPath = path.join(binBasePath, "linux", "doxygen", "doxygen");
+clangFormatPath = path.join(binBasePath, "linux", "clang-format", "clang-format");
+switch (process.platform) {
+	case "darwin":
+		{
+			const arch = process.arch === "x64" ? "x86_64" : "arm64";
+			doxygenPath = path.join(binBasePath, "osx", "doxygen", "doxygen");
+			clangFormatPath = path.join(binBasePath, "osx", "clang-format", arch, "clang-format");
+			break;
+		}
+	case "win32":
+		{
+			doxygenPath = path.join(binBasePath, "win", "doxygen", "doxygen.exe");
+			clangFormatPath = path.join(binBasePath, "win", "clang-format", "clang-format.exe");
+			break;
+		}
+}
+if (!fs.existsSync(doxygenPath)) {
+	doxygenPath = path.basename(doxygenPath);
+}
+if (!fs.existsSync(clangFormatPath)) {
+	clangFormatPath = path.basename(clangFormatPath);
+}
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
@@ -43,6 +70,7 @@ connection.onInitialize((params: InitializeParams) => {
 
 	if (params.workspaceFolders?.length) {
 		workspaceRoot = params.workspaceFolders[0].uri;
+		parseWorkspace(params.workspaceFolders);
 	}
 
 	// Check if the client supports certain functionality and fall back using global settings if not
@@ -102,37 +130,10 @@ connection.onInitialized(() => {
 	}
 
 	if (hasWorkspaceFolderCapability) {
-		connection.workspace.onDidChangeWorkspaceFolders(_event => {
+		connection.workspace.onDidChangeWorkspaceFolders(async _event => {
 			connection.console.log('Workspace folder change event received.');
 		});
 	}
-
-	connection.onRequest("installedPlugins", param => {
-		if (typeof param === 'string') {
-			installedPlugins = JSON.parse(param);
-		}
-	});
-
-	const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
-	clangFormatPath = path.join(binBasePath, "linux", "clang-format", "clang-format");
-	switch (process.platform) {
-		case "darwin":
-			{
-				const arch = process.arch === "x64" ? "x86_64" : "arm64";
-				clangFormatPath = path.join(binBasePath, "osx", "clang-format", arch, "clang-format");
-				break;
-			}
-		case "win32":
-			{
-				clangFormatPath = path.join(binBasePath, "win", "clang-format", "clang-format.exe");
-				break;
-			}
-	}
-
-	const baseDataPath = path.join(__dirname, "..", "..", "..", "data");
-	const dataFilePath = path.join(baseDataPath, "data.json");
-	const dataFileData = fs.readFileSync(dataFilePath);
-	staticData = JSON.parse(dataFileData.toString()) as ProcessedData;
 });
 
 connection.onCompletion(onCompletion);
@@ -142,6 +143,7 @@ connection.onDocumentOnTypeFormatting(onDocumentFormatting);
 connection.onDocumentSymbol(onDocumentSymbol);
 connection.onDefinition(onDefinition);
 connection.onSignatureHelp(onSignatureHelp);
+connection.onDidChangeWatchedFiles(onDidChangeWatchedFiles);
 // connection.languages.typeHierarchy.onSupertypes(onSupertypes);
 // connection.languages.typeHierarchy.onSubtypes(onSubtypes);
 // connection.languages.typeHierarchy.onPrepare(onPrepare);
