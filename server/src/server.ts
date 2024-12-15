@@ -69,7 +69,7 @@ connection.onInitialize((params: InitializeParams) => {
 	const capabilities = params.capabilities;
 
 	if (params.workspaceFolders?.length) {
-		workspaceRoot = params.workspaceFolders[0].uri;
+		workspaceRoot = params.workspaceFolders[0].uri.replace("file://", "");
 		parseWorkspace(params.workspaceFolders);
 	}
 

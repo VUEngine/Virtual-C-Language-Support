@@ -16,7 +16,7 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 		return null;
 	}
 
-	const formatFilePath = path.join(workspaceRoot.replace("file://", ""), ".clang-format");
+	const formatFilePath = path.join(workspaceRoot, ".clang-format");
 	const formatFileFound = fs.existsSync(formatFilePath);
 
 	const filename = path.basename(params.textDocument.uri);
