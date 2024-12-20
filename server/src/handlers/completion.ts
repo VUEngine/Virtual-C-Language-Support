@@ -6,11 +6,26 @@ import { getDocumentText, processedData } from '../server';
 export const onCompletion = (params: CompletionParams): CompletionList => {
 	const uriBasename = path.parse(params.textDocument.uri).name;
 	const documentContent = getDocumentText(params.textDocument.uri);
-	const currentLine = documentContent.split("\n")[params.position.line];
-	const nextLine = documentContent.split("\n")[params.position.line + 1] ?? "";
+	const documentContentLines = documentContent.split("\n");
+	const currentLine = documentContentLines[params.position.line];
+	const nextLine = documentContentLines[params.position.line + 1] ?? "";
 	const lineUntilCursor = currentLine.slice(0, params.position.character);
 	const currentWord = lineUntilCursor.split(/[\s,(]+/).pop() ?? '';
+	const documentContentUntilCursor = documentContentLines.slice(0, params.position.line).join("\n") + lineUntilCursor;
+	const currentClass = Array.from(documentContentUntilCursor.matchAll(/\s+\w+\s+([A-Z][A-Za-z0-9]+)::[A-Za-z0-9]+\s*\(.*\)\s*{/g)).pop();
+	const className = (currentClass !== undefined) ? currentClass[1] : '';
 
+	let items: CompletionItem[] = [];
+	items = getAllCompletionItems(className, uriBasename, nextLine);
+	items = addReplaceRangesToCompletionItems(items, params.position.line, lineUntilCursor, currentWord);
+
+	return {
+		isIncomplete: true,
+		items,
+	};
+};
+
+const getAllCompletionItems = (className: string, uriBasename: string, nextLine: string): CompletionItem[] => {
 	const allCompletionItems: CompletionItem[] = [
 		{
 			label: "/// doc",
@@ -38,6 +53,23 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 					value: c.description,
 				}
 			});
+
+			if (className === c.name) {
+				c.variables.forEach(v => {
+					allCompletionItems.push({
+						label: `this->${v.name}`,
+						labelDetails: {
+							description: className
+						},
+						kind: CompletionItemKind.Variable,
+						detail: `(variable) ${v.name}`,
+						documentation: {
+							kind: MarkupKind.Markdown,
+							value: v.description,
+						}
+					});
+				});
+			}
 
 			c.methods.forEach(m => {
 				allCompletionItems.push({
@@ -86,11 +118,15 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 		});
 	});
 
+	return allCompletionItems;
+};
+
+const addReplaceRangesToCompletionItems = (completionItems: CompletionItem[], lineNumber: number, lineUntilCursor: string, currentWord: string): CompletionItem[] => {
 	const replaceStartPosition: Position = {
-		line: params.position.line,
+		line: lineNumber,
 		character: lineUntilCursor.length - currentWord.length,
 	};
-	const preparedKnownItems = allCompletionItems.map(ki => {
+	const preparedKnownItems = completionItems.map(ki => {
 		const range: Range = {
 			start: replaceStartPosition,
 			end: {
@@ -110,15 +146,7 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 		};
 	});
 
-	// Filter down list to only methods of current class, if contained by the current word.
-	const filteredKnownItems = currentWord.includes('::') ?
-		preparedKnownItems.filter(e => e.label.toLowerCase().startsWith(currentWord.toLowerCase()))
-		: preparedKnownItems;
-
-	return {
-		isIncomplete: true,
-		items: filteredKnownItems,
-	};
+	return preparedKnownItems;
 };
 
 const getDocCommentSnippet = (uriBasename: string, nextLine: string): string => {

@@ -1,11 +1,4 @@
 {
-	"Header Include": {
-		"prefix": "#include",
-		"body": [
-			"#include <${0:Header}.h>"
-		],
-		"description": "Header Include"
-	},
 	"If statement": {
 		"prefix": "if",
 		"body": [
@@ -103,6 +96,13 @@
 			"}"
 		],
 		"description": "Class method"
+	},
+	"Header Include": {
+		"prefix": "#include",
+		"body": [
+			"#include <${0:Header}.h>"
+		],
+		"description": "Header Include"
 	},
 	"Header file include guard": {
 		"prefix": ["ig", "ifndef"],
