@@ -6,6 +6,7 @@ import * as util from 'util';
 import { DidChangeWatchedFilesParams, WorkspaceFolder } from 'vscode-languageserver';
 import * as convert from 'xml-js';
 import { connection, doxyfilePath, doxygenPath, processedData, workspaceRoot } from './server';
+import { MemberData, MethodData, VariableData } from './types';
 const asyncExec = util.promisify(exec);
 
 export const isBusy: Record<string, boolean> = {};
@@ -26,11 +27,11 @@ export const onDidChangeWatchedFiles = async (params: DidChangeWatchedFilesParam
 	});
 };
 
-export const parseWorkspace = (workspaceFolders: WorkspaceFolder[]) => {
+export const parseWorkspace = async (workspaceFolders: WorkspaceFolder[]) => {
 	// const enginePath = await connection.workspace.getConfiguration('build.engine.core.path');
-	workspaceFolders.forEach(f => {
+	await Promise.all(workspaceFolders.map(f => {
 		parse(f.uri.replace("file://", ""));
-	});
+	}));
 };
 
 export const parse = async (workspaceFolder: string) => {
@@ -70,6 +71,8 @@ export const parse = async (workspaceFolder: string) => {
 			const tempXmlPath = path.join(tempPath, 'xml');
 			const classes = findInPath(tempXmlPath, "class_");
 			processedData[workspaceFolder] = processData(classes, workspaceFolder);
+
+			// fs.writeFileSync(path.join(__dirname, "..", "..", "..", "doxygen.json"), JSON.stringify(classes, null, 4));
 		} catch (e) {
 			connection.console.error(e + '');
 		}
@@ -99,12 +102,12 @@ const findInPath = (searchPath: string, start: string) => {
 	return result;
 };
 
-const parseDescription = (d: object) => {
+const parseDescription = (d: object): string => {
 	const lines: string[] = [];
 
 	// @ts-expect-error LOL
 	if (!d?.para) {
-		return lines;
+		return "";
 	}
 
 	// @ts-expect-error LOL
@@ -247,7 +250,7 @@ const processData = (data: object, basePath: string) => {
 			sectiondefmemberdef.forEach(member => {
 				const bodyStart = parseInt(member.location._attributes.bodystart);
 				const bodyEnd = parseInt(member.location._attributes.bodyend);
-				const memberData = {
+				const memberData: MemberData = {
 					name: member.name._text,
 					qualifiedname: member.qualifiedname._text,
 					description: parseDescriptions(member),
@@ -270,10 +273,8 @@ const processData = (data: object, basePath: string) => {
 				};
 
 				if (member._attributes.kind === "function") {
-					// @ts-expect-error LOL
-					memberData.definition = member.definition._text;
-					// @ts-expect-error LOL
-					memberData.returnType = member.type._text;
+					(memberData as MethodData).definition = member.definition._text;
+					(memberData as MethodData).returnType = member.type._text;
 
 					const includeThis = member.name._text !== "getInstance" && !memberData.static;
 					const cleanedArgsString = member.argsstring._text.replace(")=0", ")");
@@ -287,10 +288,8 @@ const processData = (data: object, basePath: string) => {
 					}
 
 					completeArgs += cleanedArgsString.slice(1);
-					// @ts-expect-error LOL
-					memberData.argsstring = completeArgs;
-					// @ts-expect-error LOL
-					memberData.paramDocs = getParamsDocs(member, className, includeThis);
+					(memberData as MethodData).argsstring = completeArgs;
+					(memberData as MethodData).paramDocs = getParamsDocs(member, className, includeThis);
 
 					let params = member.param;
 					if (params !== undefined && !Array.isArray(params)) {
@@ -302,11 +301,9 @@ const processData = (data: object, basePath: string) => {
 						docs = [docs];
 					}
 
-					// @ts-expect-error LOL
-					memberData.parameters = [];
+					(memberData as MethodData).parameters = [];
 					if (includeThis) {
-						// @ts-expect-error LOL
-						memberData.parameters.push({
+						(memberData as MethodData).parameters.push({
 							name: className + " this",
 							description: className + " Instance"
 						});
@@ -321,7 +318,7 @@ const processData = (data: object, basePath: string) => {
 						}
 						paramIndex++;
 
-						let doc;
+						let doc = "";
 						if (docs) {
 							// @ts-expect-error LOL
 							docs.filter(d => d.parameternamelist?.parametername?._text === paramName).map(d => {
@@ -329,8 +326,7 @@ const processData = (data: object, basePath: string) => {
 							});
 						}
 
-						// @ts-expect-error LOL
-						memberData.parameters.push({
+						(memberData as MethodData).parameters.push({
 							name: args[paramIndex],
 							description: doc
 						});
@@ -345,6 +341,7 @@ const processData = (data: object, basePath: string) => {
 					// @ts-expect-error LOL
 					classData.enums.push(memberData);
 				} else if (member._attributes.kind === "variable") {
+					(memberData as VariableData).type = member.type._text ?? member.type.ref._text;
 					// @ts-expect-error LOL
 					classData.variables.push(memberData);
 				} else {

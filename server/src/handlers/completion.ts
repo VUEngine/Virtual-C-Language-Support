@@ -36,6 +36,17 @@ const getAllCompletionItems = (className: string, uriBasename: string, nextLine:
 			insertText: getDocCommentSnippet(uriBasename, nextLine),
 			insertTextFormat: InsertTextFormat.Snippet
 		},
+		{
+			label: "this",
+			labelDetails: {
+				description: "this pointer"
+			},
+			kind: CompletionItemKind.Text,
+			documentation: {
+				kind: MarkupKind.Markdown,
+				value: "Pointer to the current class instance",
+			}
+		},
 	];
 
 	Object.keys(processedData).forEach(key => {
@@ -62,7 +73,7 @@ const getAllCompletionItems = (className: string, uriBasename: string, nextLine:
 							description: className
 						},
 						kind: CompletionItemKind.Variable,
-						detail: `(variable) ${v.name}`,
+						detail: `(variable) ${v.type} ${v.name}`,
 						documentation: {
 							kind: MarkupKind.Markdown,
 							value: v.description,

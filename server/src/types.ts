@@ -33,13 +33,17 @@ export interface MethodData extends MemberData {
 	parameters: ParameterData[]
 }
 
+export interface VariableData extends MemberData {
+	type: string
+}
+
 export interface ClassData {
 	name: string
 	base?: string
 	description: string
 	location: LocationData
 	methods: MethodData[]
-	variables: MemberData[]
+	variables: VariableData[]
 	enums: MemberData[]
 	typedefs: MemberData[]
 }
