@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument';
 import {
 	createConnection,
@@ -22,35 +21,7 @@ export const connection = createConnection(ProposedFeatures.all);
 export const documents = new TextDocuments(TextDocument);
 
 export const processedData: ProcessedData = {};
-export const doxyfilePath: string = path.join(__dirname, "..", "..", "..", "resources", "Doxyfile");
-export let doxygenPath: string;
-export let clangFormatPath: string;
 export let workspaceRoot: string;
-
-const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
-doxygenPath = path.join(binBasePath, "linux", "doxygen", "doxygen");
-clangFormatPath = path.join(binBasePath, "linux", "clang-format", "clang-format");
-switch (process.platform) {
-	case "darwin":
-		{
-			const arch = process.arch === "x64" ? "x86_64" : "arm64";
-			doxygenPath = path.join(binBasePath, "osx", "doxygen", "doxygen");
-			clangFormatPath = path.join(binBasePath, "osx", "clang-format", arch, "clang-format");
-			break;
-		}
-	case "win32":
-		{
-			doxygenPath = path.join(binBasePath, "win", "doxygen", "doxygen.exe");
-			clangFormatPath = path.join(binBasePath, "win", "clang-format", "clang-format.exe");
-			break;
-		}
-}
-if (!fs.existsSync(doxygenPath)) {
-	doxygenPath = path.basename(doxygenPath);
-}
-if (!fs.existsSync(clangFormatPath)) {
-	clangFormatPath = path.basename(clangFormatPath);
-}
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;

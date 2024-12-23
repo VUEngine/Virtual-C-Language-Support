@@ -2,10 +2,30 @@ import { exec } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
-import { DocumentFormattingParams, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions } from 'vscode-languageserver';
+import { DocumentFormattingParams, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams } from 'vscode-languageserver';
 import { TextEdit } from 'vscode-languageserver-textdocument';
-import { clangFormatPath, connection, getDocumentText, workspaceRoot } from '../server';
+import { connection, getDocumentText, workspaceRoot } from '../server';
 const asyncExec = util.promisify(exec);
+
+const clangFormatFilePath = path.join(__dirname, "..", "..", "..", "resources", ".clang-format");
+const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
+let clangFormatPath = path.join(binBasePath, "linux", "clang-format", "clang-format");
+switch (process.platform) {
+	case "darwin":
+		{
+			const arch = process.arch === "x64" ? "x86_64" : "arm64";
+			clangFormatPath = path.join(binBasePath, "osx", "clang-format", arch, "clang-format");
+			break;
+		}
+	case "win32":
+		{
+			clangFormatPath = path.join(binBasePath, "win", "clang-format", "clang-format.exe");
+			break;
+		}
+}
+if (!fs.existsSync(clangFormatPath)) {
+	clangFormatPath = path.basename(clangFormatPath);
+}
 
 export const onDocumentFormatting = async (params: DocumentFormattingParams | DocumentRangeFormattingParams | DocumentOnTypeFormattingParams): Promise<TextEdit[] | null> =>
 	formatDocument(params as DocumentFormattingParams & DocumentRangeFormattingParams & DocumentOnTypeFormattingParams);
@@ -16,8 +36,10 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 		return null;
 	}
 
-	const formatFilePath = path.join(workspaceRoot, ".clang-format");
-	const formatFileFound = fs.existsSync(formatFilePath);
+	let formatFilePath = path.join(workspaceRoot, ".clang-format");
+	if (!fs.existsSync(formatFilePath)) {
+		formatFilePath = clangFormatFilePath;
+	}
 
 	const filename = path.basename(params.textDocument.uri);
 	const documentContent = getDocumentText(params.textDocument.uri);
@@ -30,9 +52,7 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 			? ` --lines=${params.position.line}:${params.position.line + 2}`
 			: "";
 
-	const stringifiedConfig = formatFileFound
-		? `file:${formatFilePath}`
-		: JSON.stringify(getStyle(params.options)).replace(/"/g, '').replace(/:/g, ': ').replace(/,/g, ', ');
+	const stringifiedConfig = `file:${formatFilePath}`;
 	const preparedDocumentContent = documentContent.replace(/\\0/g, '[[[NULLBYTE]]]').replace(/"/g, '\\"');
 
 	try {
@@ -66,74 +86,3 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 
 	return null;
 };
-
-const getStyle = (options: FormattingOptions) => ({
-	BasedOnStyle: "Google",
-
-	/* Always indent with tab width of 4 */
-	UseTab: options.insertSpaces === true ? "Never" : "Always",
-	IndentWidth: options.tabSize ?? 4,
-	TabWidth: options.tabSize ?? 4,
-
-	/* Sort includes, but preserve blocks */
-	IncludeBlocks: "Preserve",
-	SortIncludes: "CaseSensitive",
-
-	/* Always break before braces */
-	BreakBeforeBraces: "Allman",
-
-	/* Never allow any spaces before opening parens */
-	SpaceBeforeParens: "Custom",
-	SpaceBeforeParensOptions: {
-		AfterControlStatements: false,
-		AfterForeachMacros: false,
-		AfterFunctionDeclarationName: false,
-		AfterFunctionDefinitionName: false,
-		AfterIfMacros: false,
-		AfterOverloadedOperator: false,
-		AfterRequiresInClause: false,
-		AfterRequiresInExpression: false,
-		BeforeNonEmptyParentheses: false,
-	},
-
-	/* Additional control of spaces */
-	SpaceBeforeRangeBasedForLoopColon: false,
-	SpaceBeforeSquareBrackets: false,
-	SpaceInEmptyBlock: false,
-	SpacesInParens: "Never",
-	SpacesInSquareBrackets: false,
-	SpacesInLineCommentPrefix: {
-		Minimum: 1,
-		Maximum: 1,
-	},
-
-	/* Max column width 108 of characters */
-	/* put each of a function call's arguments to a new line if they don't fit on a single line */
-	ColumnLimit: 108,
-	AlignAfterOpenBracket: "BlockIndent",
-	AllowAllArgumentsOnNextLine: false,
-	AllowAllParametersOfDeclarationOnNextLine: false,
-	BinPackArguments: false,
-	/*BinPackParameters: "OnePerLine",*/
-
-	/* Other */
-	AlignArrayOfStructures: "Left",
-	AlignConsecutiveMacros: "AcrossEmptyLinesAndComments",
-	AlignEscapedNewlines: "Right",
-	AlignOperands: "DontAlign",
-	AllowShortBlocksOnASingleLine: false,
-	AllowShortCaseExpressionOnASingleLine: false,
-	AllowShortCaseLabelsOnASingleLine: false,
-	AllowShortFunctionsOnASingleLine: false,
-	AllowShortIfStatementsOnASingleLine: false,
-	AllowShortLoopsOnASingleLine: false,
-	AlwaysBreakBeforeMultilineStrings: true,
-	BreakBeforeTernaryOperators: true,
-	CommentPragmas: "'^(———)'",
-	InsertNewlineAtEOF: options.insertFinalNewline ?? true,
-	PointerAlignment: "Left",
-	/*QualifierOrder: "[friend, static, inline, type, const, volatile]",*/
-	ReferenceAlignment: "Left",
-	SpaceAroundPointerQualifiers: "Before",
-	SpaceBeforeCaseColon: false,
-});

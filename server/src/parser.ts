@@ -5,11 +5,25 @@ import * as path from 'path';
 import * as util from 'util';
 import { DidChangeWatchedFilesParams, WorkspaceFolder } from 'vscode-languageserver';
 import * as convert from 'xml-js';
-import { connection, doxyfilePath, doxygenPath, processedData, workspaceRoot } from './server';
+import { connection, processedData, workspaceRoot } from './server';
 import { MemberData, MethodData, VariableData } from './types';
 const asyncExec = util.promisify(exec);
 
-export const isBusy: Record<string, boolean> = {};
+const isBusy: Record<string, boolean> = {};
+const doxyfilePath = path.join(__dirname, "..", "..", "..", "resources", "Doxyfile");
+const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
+let doxygenPath = path.join(binBasePath, "linux", "doxygen", "doxygen");
+switch (process.platform) {
+	case "darwin":
+		doxygenPath = path.join(binBasePath, "osx", "doxygen", "doxygen");
+		break;
+	case "win32":
+		doxygenPath = path.join(binBasePath, "win", "doxygen", "doxygen.exe");
+		break;
+}
+if (!fs.existsSync(doxygenPath)) {
+	doxygenPath = path.basename(doxygenPath);
+}
 
 const tempBasePath = path.join(os.tmpdir(), "virtual-c-ls");
 if (!fs.existsSync(tempBasePath)) {

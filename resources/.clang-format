@@ -1,0 +1,65 @@
+BasedOnStyle: Google
+
+UseTab: Always
+IndentWidth: 4
+TabWidth: 4
+
+# Sort includes but preserve blocks
+IncludeBlocks: Preserve
+SortIncludes: CaseSensitive
+
+# Always break before braces
+BreakBeforeBraces: Allman
+
+# Never allow any spaces before opening parens
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions: 
+  AfterControlStatements: false
+  AfterForeachMacros: false
+  AfterFunctionDeclarationName: false
+  AfterFunctionDefinitionName: false
+  AfterIfMacros: false
+  AfterOverloadedOperator: false
+  AfterRequiresInClause: false
+  AfterRequiresInExpression: false
+  BeforeNonEmptyParentheses: false
+
+# Additional control of spaces
+SpaceBeforeRangeBasedForLoopColon: false
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: false
+SpacesInParens: Never
+SpacesInLineCommentPrefix:
+  Minimum: 1
+  Maximum: 1
+SpacesInSquareBrackets: false
+
+# Max column width 108 of characters
+# put each of a function call's arguments to a new line if they don't fit on a single line
+ColumnLimit: 108
+AlignAfterOpenBracket: BlockIndent
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackArguments: false
+#BinPackParameters: OnePerLine
+
+# Other
+AlignArrayOfStructures: Left
+AlignConsecutiveMacros: AcrossEmptyLinesAndComments
+AlignEscapedNewlines: Right
+AlignOperands: DontAlign
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseExpressionOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakBeforeMultilineStrings: true
+BreakBeforeTernaryOperators: true
+CommentPragmas: '^(———)'
+InsertNewlineAtEOF: true
+PointerAlignment: Left
+#QualifierOrder: [friend, static, inline, type, const, volatile]
+ReferenceAlignment: Left
+SpaceAroundPointerQualifiers: Before
+SpaceBeforeCaseColon: false
