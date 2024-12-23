@@ -9,21 +9,21 @@ const getRanges = (location: LocationData, uri: string): { range: Range, selecti
 		return {
 			range: {
 				start: {
-					line: location.body?.start,
+					line: location.body?.start ? location.body?.start - 1 : 0,
 					character: 0,
 				},
 				end: {
-					line: location.body?.end,
+					line: location.body?.end ? location.body?.end - 1 : 0,
 					character: 0,
 				},
 			},
 			selectionRange: {
 				start: {
-					line: location.body?.start,
+					line: location.body?.start ? location.body?.start - 1 : 0,
 					character: 0,
 				},
 				end: {
-					line: location.body?.start,
+					line: location.body?.start ? location.body?.start - 1 : 0,
 					character: 0,
 				},
 			},
@@ -32,21 +32,21 @@ const getRanges = (location: LocationData, uri: string): { range: Range, selecti
 		return {
 			range: {
 				start: {
-					line: location.header.line,
+					line: location.header.line - 1,
 					character: location.header.column,
 				},
 				end: {
-					line: location.header.line + 1,
+					line: location.header.line - 1,
 					character: 0,
 				},
 			},
 			selectionRange: {
 				start: {
-					line: location.header.line,
+					line: location.header.line - 1,
 					character: location.header.column,
 				},
 				end: {
-					line: location.header.line + 1,
+					line: location.header.line - 1,
 					character: 0,
 				},
 			},

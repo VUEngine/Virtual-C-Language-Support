@@ -29,11 +29,11 @@ export const onDefinition = (params: TypeDefinitionParams): Location | Location[
 				uri: path.join(basePath, location.body?.uri ?? location.header.uri),
 				range: {
 					start: {
-						line: (location.body?.start ?? location.header.line) - 1,
+						line: (location.body?.start ?? location.header.line) - 2,
 						character: 0
 					},
 					end: {
-						line: location.body?.end ?? location.header.line,
+						line: (location.body?.end ?? location.header.line),
 						character: 0
 					}
 				}
