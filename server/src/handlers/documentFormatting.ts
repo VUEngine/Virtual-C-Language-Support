@@ -56,7 +56,7 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 	const numLines = lines.length;
 	const lastLineLength = lines[lines.length - 1].length;
 	const linesParam = params.range
-		? ` --lines=${params.range.start.line}:${params.range.end.line}`
+		? ` --lines=${params.range.start.line + 1}:${params.range.end.line + 1}`
 		: params.position
 			? ` --lines=${params.position.line}:${params.position.line + 2}`
 			: "";
