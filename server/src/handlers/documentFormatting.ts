@@ -102,6 +102,10 @@ const getStyle = (options: FormattingOptions) => ({
 	SpaceInEmptyBlock: false,
 	SpacesInParens: "Never",
 	SpacesInSquareBrackets: false,
+	SpacesInLineCommentPrefix: {
+		Minimum: 1,
+		Maximum: 1,
+	},
 
 	/* Max column width 108 of characters */
 	/* put each of a function call's arguments to a new line if they don't fit on a single line */
@@ -113,6 +117,7 @@ const getStyle = (options: FormattingOptions) => ({
 	/*BinPackParameters: "OnePerLine",*/
 
 	/* Other */
+	AlignArrayOfStructures: "Left",
 	AlignConsecutiveMacros: "AcrossEmptyLinesAndComments",
 	AlignEscapedNewlines: "Right",
 	AlignOperands: "DontAlign",
@@ -124,8 +129,10 @@ const getStyle = (options: FormattingOptions) => ({
 	AllowShortLoopsOnASingleLine: false,
 	AlwaysBreakBeforeMultilineStrings: true,
 	BreakBeforeTernaryOperators: true,
+	CommentPragmas: "'^(———)'",
 	InsertNewlineAtEOF: options.insertFinalNewline ?? true,
 	PointerAlignment: "Left",
+	/*QualifierOrder: "[friend, static, inline, type, const, volatile]",*/
 	ReferenceAlignment: "Left",
 	SpaceAroundPointerQualifiers: "Before",
 	SpaceBeforeCaseColon: false,
