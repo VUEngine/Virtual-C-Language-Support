@@ -1,11 +1,17 @@
 import { exec } from 'child_process';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
 import { DocumentFormattingParams, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams } from 'vscode-languageserver';
 import { TextEdit } from 'vscode-languageserver-textdocument';
 import { connection, getDocumentText, workspaceRoot } from '../server';
 const asyncExec = util.promisify(exec);
+
+const tempBasePath = path.join(os.tmpdir(), "virtual-c-ls");
+if (!fs.existsSync(tempBasePath)) {
+	fs.mkdirSync(tempBasePath);
+}
 
 const clangFormatFilePath = path.join(__dirname, "..", "..", "..", "resources", ".clang-format");
 const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
@@ -36,6 +42,9 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 		return null;
 	}
 
+	const tempPath = path.join(tempBasePath, `tempFormat${extname}`);
+	fs.copyFileSync(params.textDocument.uri.replace('file:', ''), tempPath);
+
 	let formatFilePath = path.join(workspaceRoot, ".clang-format");
 	if (!fs.existsSync(formatFilePath)) {
 		formatFilePath = clangFormatFilePath;
@@ -52,12 +61,9 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 			? ` --lines=${params.position.line}:${params.position.line + 2}`
 			: "";
 
-	const stringifiedConfig = `file:${formatFilePath}`;
-	const preparedDocumentContent = documentContent.replace(/\\0/g, '[[[NULLBYTE]]]').replace(/"/g, '\\"');
-
 	try {
 		const { stdout, stderr } = await asyncExec(
-			`echo "${preparedDocumentContent}" | ${clangFormatPath ?? "clang-format"}${linesParam} --assume-filename=${filename} --style="${stringifiedConfig}"`
+			`cat ${tempPath} | ${clangFormatPath}${linesParam} --assume-filename=${filename} --style="file:${formatFilePath}"`
 		);
 		if (stderr) {
 			connection.console.error(stderr);
@@ -75,7 +81,7 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 						character: lastLineLength,
 					},
 				},
-				newText: stdout.replace(/\[\[\[NULLBYTE\]\]\]/g, '\\0')
+				newText: stdout,
 			}];
 		}
 	} catch (e) {
