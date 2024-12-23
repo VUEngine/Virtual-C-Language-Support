@@ -13,7 +13,7 @@ if (!fs.existsSync(tempBasePath)) {
 	fs.mkdirSync(tempBasePath);
 }
 
-const clangFormatFilePath = path.join(__dirname, "..", "..", "..", "resources", ".clang-format");
+let clangFormatFilePath = path.join(__dirname, "..", "..", "..", "resources", ".clang-format");
 const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
 let clangFormatPath = path.join(binBasePath, "linux", "clang-format", "clang-format");
 switch (process.platform) {
@@ -45,9 +45,9 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 	const tempPath = path.join(tempBasePath, `tempFormat${extname}`);
 	fs.copyFileSync(params.textDocument.uri.replace('file:', ''), tempPath);
 
-	let formatFilePath = path.join(workspaceRoot, ".clang-format");
-	if (!fs.existsSync(formatFilePath)) {
-		formatFilePath = clangFormatFilePath;
+	const customClangFormatFilePath = path.join(workspaceRoot, ".clang-format");
+	if (fs.existsSync(customClangFormatFilePath)) {
+		clangFormatFilePath = customClangFormatFilePath;
 	}
 
 	const filename = path.basename(params.textDocument.uri);
@@ -63,7 +63,7 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 
 	try {
 		const { stdout, stderr } = await asyncExec(
-			`cat ${tempPath} | ${clangFormatPath}${linesParam} --assume-filename=${filename} --style="file:${formatFilePath}"`
+			`cat ${tempPath} | ${clangFormatPath}${linesParam} --assume-filename=${filename} --style="file:${clangFormatFilePath}"`
 		);
 		if (stderr) {
 			connection.console.error(stderr);

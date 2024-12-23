@@ -41,7 +41,6 @@ connection.onInitialize((params: InitializeParams) => {
 
 	if (params.workspaceFolders?.length) {
 		workspaceRoot = params.workspaceFolders[0].uri.replace("file://", "");
-		parseWorkspace(params.workspaceFolders);
 	}
 
 	// Check if the client supports certain functionality and fall back using global settings if not
@@ -105,6 +104,8 @@ connection.onInitialized(() => {
 			connection.console.log('Workspace folder change event received.');
 		});
 	}
+
+	parseWorkspace();
 });
 
 connection.onCompletion(onCompletion);

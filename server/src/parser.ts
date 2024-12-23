@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
-import { DidChangeWatchedFilesParams, WorkspaceFolder } from 'vscode-languageserver';
+import { DidChangeWatchedFilesParams } from 'vscode-languageserver';
 import * as convert from 'xml-js';
 import { connection, processedData, workspaceRoot } from './server';
 import { MemberData, MethodData, VariableData } from './types';
@@ -30,8 +30,34 @@ if (!fs.existsSync(tempBasePath)) {
 	fs.mkdirSync(tempBasePath);
 }
 
-export const onDidChangeWatchedFiles = async (params: DidChangeWatchedFilesParams) => {
+const getWorkspaceFolders = async () => {
 	const workspaceFolders = await connection.workspace.getWorkspaceFolders() ?? [];
+
+	await Promise.all(
+		[
+			'build.engine.core.path',
+			'plugins.library.path',
+			'plugins.user.path',
+		]
+			.map(async (setting) => {
+				const configuredPath = await connection.workspace.getConfiguration(setting);
+				if (configuredPath) {
+					workspaceFolders.push({
+						'uri': `file://${configuredPath}`,
+						'name': path.basename(configuredPath),
+					});
+				}
+			})
+	);
+
+	return workspaceFolders
+		.filter((obj, index, self) =>
+			index === self.findIndex((t) => t.uri === obj.uri)
+		);
+};
+
+export const onDidChangeWatchedFiles = async (params: DidChangeWatchedFilesParams) => {
+	const workspaceFolders = await getWorkspaceFolders();
 	params.changes.forEach(c => {
 		workspaceFolders.forEach(w => {
 			if (c.uri.startsWith(w.uri)) {
@@ -41,8 +67,8 @@ export const onDidChangeWatchedFiles = async (params: DidChangeWatchedFilesParam
 	});
 };
 
-export const parseWorkspace = async (workspaceFolders: WorkspaceFolder[]) => {
-	// const enginePath = await connection.workspace.getConfiguration('build.engine.core.path');
+export const parseWorkspace = async () => {
+	const workspaceFolders = await getWorkspaceFolders();
 	await Promise.all(workspaceFolders.map(f => {
 		parse(f.uri.replace("file://", ""));
 	}));
