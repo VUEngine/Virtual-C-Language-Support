@@ -42,9 +42,6 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 		return null;
 	}
 
-	const tempPath = path.join(tempBasePath, `tempFormat${extname}`);
-	fs.copyFileSync(params.textDocument.uri.replace('file:', ''), tempPath);
-
 	const customClangFormatFilePath = path.join(workspaceRoot, ".clang-format");
 	if (fs.existsSync(customClangFormatFilePath)) {
 		clangFormatFilePath = customClangFormatFilePath;
@@ -60,6 +57,9 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 		: params.position
 			? ` --lines=${params.position.line}:${params.position.line + 2}`
 			: "";
+
+	const tempPath = path.join(tempBasePath, `tempFormat${extname}`);
+	fs.writeFileSync(tempPath, documentContent);
 
 	try {
 		const { stdout, stderr } = await asyncExec(
