@@ -52,12 +52,12 @@ export const onDefinition = (params: TypeDefinitionParams): Location | Location[
 				if (!result) {
 					Object.values(c.methods ?? {}).forEach(m => checkSymbol(m.qualifiedname, m.location));
 				}
-				if (!result) {
-					Object.values(c.enums ?? {}).forEach(e => checkSymbol(e.name, e.location));
-				}
-				if (!result) {
-					Object.values(c.typedefs ?? {}).forEach(t => checkSymbol(t.name, t.location));
-				}
+			}
+			if (!result) {
+				Object.values(c.enums ?? {}).forEach(e => checkSymbol(e.name, e.location));
+			}
+			if (!result) {
+				Object.values(c.typedefs ?? {}).forEach(t => checkSymbol(t.name, t.location));
 			}
 		});
 		Object.values(processedData[contributor]['structs']).map((c: StructData) => {
