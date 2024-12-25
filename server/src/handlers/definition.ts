@@ -1,20 +1,18 @@
 import * as path from 'path';
 import { Location, LocationLink, TypeDefinitionParams } from 'vscode-languageserver';
 import { getDocumentText, processedData } from '../server';
-import { LocationData } from '../types';
+import { ClassData, LocationData, StructData } from '../types';
 
 export const onDefinition = (params: TypeDefinitionParams): Location | Location[] | LocationLink[] | null => {
 	const documentContent = getDocumentText(params.textDocument.uri);
 	const currentLine = documentContent.split("\n")[params.position.line];
 	const lineUntilCursor = currentLine.slice(0, params.position.character);
 	const lineAfterCursor = currentLine.slice(params.position.character);
-	const currentWordUntilCursor = lineUntilCursor.split(/[>\s]+/).pop() ?? '';
+	const currentWordUntilCursor = lineUntilCursor.split(/[>:\s]+/).pop() ?? '';
 	const currentWordAfterCursor = lineAfterCursor.split(/[(;<\s]+/)[0] ?? '';
 	let currentWord = currentWordUntilCursor + currentWordAfterCursor;
 
-	if (currentWordAfterCursor.includes('::')) {
-		currentWord = currentWord.split('::')[0] ?? currentWord;
-	} else if (
+	if (
 		(currentWord.startsWith('<') && currentWord.endsWith('.h>')) ||
 		(currentWord.startsWith('"') && currentWord.endsWith('.h"'))
 	) {
@@ -41,18 +39,24 @@ export const onDefinition = (params: TypeDefinitionParams): Location | Location[
 		}
 	};
 
-	Object.keys(processedData).forEach(key => {
-		Object.values(processedData[key]).map(c => {
-			findSymbol(c.name, c.location, key);
-			if (!result) {
-				c.methods.forEach(m => findSymbol(m.qualifiedname, m.location, key));
-			}
-			if (!result) {
-				c.enums.forEach(e => findSymbol(e.name, e.location, key));
-			}
-			if (!result) {
-				c.typedefs.forEach(t => findSymbol(t.name, t.location, key));
-			}
+	Object.keys(processedData).forEach(contributor => {
+		const mapTypes: ('classes' | 'structs')[] = ['classes', 'structs'];
+		mapTypes.forEach(key => {
+			Object.values(processedData[contributor][key]).map((c: ClassData | StructData) => {
+				findSymbol(c.name, c.location, contributor);
+				if (!result) {
+					(c as ClassData).methods?.forEach(m => findSymbol(m.qualifiedname, m.location, contributor));
+				}
+				if (!result) {
+					(c as ClassData).enums?.forEach(e => findSymbol(e.name, e.location, contributor));
+				}
+				if (!result) {
+					(c as ClassData).typedefs?.forEach(t => findSymbol(t.name, t.location, contributor));
+				}
+				if (!result) {
+					(c as StructData).attributes?.forEach(t => findSymbol(t.name, t.location, contributor));
+				}
+			});
 		});
 	});
 

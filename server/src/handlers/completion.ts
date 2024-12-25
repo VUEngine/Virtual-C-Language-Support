@@ -51,7 +51,7 @@ const getAllCompletionItems = (className: string, uriBasename: string, nextLine:
 
 	Object.keys(processedData).forEach(key => {
 		const contributor = path.basename(key);
-		Object.values(processedData[key]).forEach(c => {
+		Object.values(processedData[key]['classes']).forEach(c => {
 			allCompletionItems.push({
 				label: c.name,
 				labelDetails: {
@@ -103,7 +103,7 @@ const getAllCompletionItems = (className: string, uriBasename: string, nextLine:
 					labelDetails: {
 						description: contributor
 					},
-					kind: CompletionItemKind.Interface,
+					kind: CompletionItemKind.Struct,
 					detail: `(typedef) ${t.name}`,
 					documentation: {
 						kind: MarkupKind.Markdown,
@@ -125,6 +125,20 @@ const getAllCompletionItems = (className: string, uriBasename: string, nextLine:
 						value: e.description,
 					}
 				});
+			});
+		});
+		Object.values(processedData[key]['structs']).forEach(c => {
+			allCompletionItems.push({
+				label: c.name,
+				labelDetails: {
+					description: contributor
+				},
+				kind: CompletionItemKind.Struct,
+				detail: `(struct) ${c.name}`,
+				documentation: {
+					kind: MarkupKind.Markdown,
+					value: c.description,
+				}
 			});
 		});
 	});

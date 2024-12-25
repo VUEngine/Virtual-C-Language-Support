@@ -16,7 +16,7 @@ export const onSignatureHelp = (params: SignatureHelpParams): SignatureHelp | nu
 
 	let result: SignatureHelp | null = null;
 	Object.keys(processedData).forEach(key => {
-		Object.values(processedData[key]).forEach(c => {
+		Object.values(processedData[key]['classes']).forEach(c => {
 			c.methods.forEach(m => {
 				if (!result && m.qualifiedname === currentMethod) {
 					result = {
@@ -32,6 +32,7 @@ export const onSignatureHelp = (params: SignatureHelpParams): SignatureHelp | nu
 				}
 			});
 		});
+		// TODO: support for structs?
 	});
 
 	return result;

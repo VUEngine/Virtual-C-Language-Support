@@ -6,7 +6,7 @@ import * as util from 'util';
 import { DidChangeWatchedFilesParams } from 'vscode-languageserver';
 import * as convert from 'xml-js';
 import { connection, processedData, workspaceRoot } from './server';
-import { MemberData, MethodData, VariableData } from './types';
+import { ClassData, ClassDataMap, MemberData, MethodData, StructAttributeData, StructData, StructDataMap, VariableData } from './types';
 const asyncExec = util.promisify(exec);
 
 const isBusy: Record<string, boolean> = {};
@@ -110,9 +110,14 @@ export const parse = async (workspaceFolder: string) => {
 			// connection.console.error(stderr);
 			const tempXmlPath = path.join(tempPath, 'xml');
 			const classes = findInPath(tempXmlPath, "class_");
-			processedData[workspaceFolder] = processData(classes, workspaceFolder);
+			const structs = findInPath(tempXmlPath, "struct_");
+			processedData[workspaceFolder] = {
+				'classes': processClassesData(classes, workspaceFolder),
+				'structs': processStructsData(structs, workspaceFolder),
+			};
 
-			// fs.writeFileSync(path.join(__dirname, "..", "..", "..", "doxygen.json"), JSON.stringify(classes, null, 4));
+			//fs.writeFileSync(path.join(__dirname, "..", "..", "..", `doxygen_${path.basename(workspaceFolder)}.json`), JSON.stringify({ classes, structs }, null, 4));
+			//fs.writeFileSync(path.join(__dirname, "..", "..", "..", `processed_data.json`), JSON.stringify(processedData, null, 4));
 		} catch (e) {
 			connection.console.error(e + '');
 		}
@@ -244,15 +249,15 @@ const getParamsDocs = (member, className, includeThis) => {
 	return result + "\n\n";
 };
 
-const processData = (data: object, basePath: string) => {
-	const result = {};
+const processClassesData = (data: object, basePath: string): ClassDataMap => {
+	const result: ClassDataMap = {};
 
 	Object.values(data).forEach(cls => {
-		const className = cls.compoundname._text;
+		const compoundname = cls.compoundname._text;
 		const bodyStart = parseInt(cls.location._attributes.bodystart);
 		const bodyEnd = parseInt(cls.location._attributes.bodyend);
-		const classData = {
-			name: className,
+		const compoundData: ClassData = {
+			name: compoundname,
 			base: cls.basecompoundref?._text,
 			description: parseDescriptions(cls),
 			location: {
@@ -321,7 +326,7 @@ const processData = (data: object, basePath: string) => {
 
 					let completeArgs = "(";
 					if (includeThis) {
-						completeArgs += className + " this";
+						completeArgs += compoundname + " this";
 						if (cleanedArgsString.length > 2) {
 							completeArgs += ", ";
 						}
@@ -329,7 +334,7 @@ const processData = (data: object, basePath: string) => {
 
 					completeArgs += cleanedArgsString.slice(1);
 					(memberData as MethodData).argsstring = completeArgs;
-					(memberData as MethodData).paramDocs = getParamsDocs(member, className, includeThis);
+					(memberData as MethodData).paramDocs = getParamsDocs(member, compoundname, includeThis);
 
 					let params = member.param;
 					if (params !== undefined && !Array.isArray(params)) {
@@ -344,8 +349,8 @@ const processData = (data: object, basePath: string) => {
 					(memberData as MethodData).parameters = [];
 					if (includeThis) {
 						(memberData as MethodData).parameters.push({
-							name: className + " this",
-							description: className + " Instance"
+							name: compoundname + " this",
+							description: compoundname + " Instance"
 						});
 					}
 					let paramIndex = 0;
@@ -372,18 +377,14 @@ const processData = (data: object, basePath: string) => {
 						});
 					});
 
-					// @ts-expect-error LOL
-					classData.methods.push(memberData);
+					compoundData.methods.push(memberData as MethodData);
 				} else if (member._attributes.kind === "typedef") {
-					// @ts-expect-error LOL
-					classData.typedefs.push(memberData);
+					compoundData.typedefs.push(memberData);
 				} else if (member._attributes.kind === "enum") {
-					// @ts-expect-error LOL
-					classData.enums.push(memberData);
+					compoundData.enums.push(memberData);
 				} else if (member._attributes.kind === "variable") {
 					(memberData as VariableData).type = member.type._text ?? member.type.ref._text;
-					// @ts-expect-error LOL
-					classData.variables.push(memberData);
+					compoundData.variables.push(memberData as VariableData);
 				} else {
 					console.error("Unrecognized kind", member._attributes.kind);
 				}
@@ -391,8 +392,79 @@ const processData = (data: object, basePath: string) => {
 			});
 		});
 
+		result[compoundname] = compoundData;
+	});
+
+	return result;
+};
+
+const processStructsData = (data: object, basePath: string): StructDataMap => {
+	const result: StructDataMap = {};
+
+	Object.values(data).forEach(cls => {
+		const compoundname = cls.compoundname._text;
+		const bodyStart = parseInt(cls.location._attributes.bodystart);
+		const bodyEnd = parseInt(cls.location._attributes.bodyend);
+		const compoundData: StructData = {
+			name: compoundname,
+			description: parseDescriptions(cls),
+			location: {
+				header: {
+					uri: path.relative(basePath, cls.location._attributes.file),
+					line: parseInt(cls.location._attributes.line),
+					column: parseInt(cls.location._attributes.column),
+				},
+				body: cls.location._attributes.bodyfile
+					? {
+						uri: path.relative(basePath, cls.location._attributes.bodyfile),
+						start: bodyStart,
+						end: bodyEnd !== -1 ? bodyEnd : bodyStart,
+					}
+					: undefined,
+			},
+			attributes: [],
+		};
+
+		let sectiondefs = cls.sectiondef;
+		if (!Array.isArray(cls.sectiondef)) {
+			sectiondefs = [sectiondefs];
+		}
+
 		// @ts-expect-error LOL
-		result[className] = classData;
+		sectiondefs.forEach(sectiondef => {
+			let sectiondefmemberdef = sectiondef.memberdef;
+			if (!Array.isArray(sectiondefmemberdef)) {
+				sectiondefmemberdef = [sectiondefmemberdef];
+			}
+			// @ts-expect-error LOL
+			sectiondefmemberdef.forEach(member => {
+				const bodyStart = parseInt(member.location._attributes.bodystart);
+				const bodyEnd = parseInt(member.location._attributes.bodyend);
+				const memberData: StructAttributeData = {
+					name: member.name._text,
+					definition: member.definition._text.replace(` ${compoundname}::`, ' '),
+					description: parseDescriptions(member),
+					location: {
+						header: {
+							uri: path.relative(basePath, member.location._attributes.file),
+							line: parseInt(member.location._attributes.line),
+							column: parseInt(member.location._attributes.column),
+						},
+						body: member.location._attributes.bodyfile
+							? {
+								uri: path.relative(basePath, member.location._attributes.bodyfile),
+								start: bodyStart,
+								end: bodyEnd !== -1 ? bodyEnd : bodyStart,
+							}
+							: undefined,
+					},
+				};
+
+				compoundData.attributes.push(memberData);
+			});
+		});
+
+		result[compoundname] = compoundData;
 	});
 
 	return result;

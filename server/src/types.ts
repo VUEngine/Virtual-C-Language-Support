@@ -48,6 +48,26 @@ export interface ClassData {
 	typedefs: MemberData[]
 }
 
-export type ClassDataMap = Record<string, ClassData>;
+export interface StructAttributeData {
+	name: string
+	definition: string
+	description: string
+	location: LocationData
+}
 
-export type ProcessedData = Record<string, ClassDataMap>;
+export interface StructData {
+	name: string
+	description: string
+	location: LocationData
+	attributes: StructAttributeData[]
+}
+
+export type ClassDataMap = Record<string, ClassData>;
+export type StructDataMap = Record<string, StructData>;
+
+export interface ProcessedDataMap {
+	classes: ClassDataMap,
+	structs: StructDataMap,
+};
+
+export type ProcessedData = Record<string, ProcessedDataMap>;
