@@ -9,12 +9,16 @@ import {
 	TextDocuments,
 	TextDocumentSyncKind
 } from 'vscode-languageserver/node';
-import { onDidChangeWatchedFiles, parseWorkspace } from './parser';
 import { onCompletion } from './handlers/completion';
 import { onDefinition } from './handlers/definition';
 import { onDocumentFormatting } from './handlers/documentFormatting';
 import { onDocumentSymbol } from './handlers/documentSymbol';
+import { onInlayHint } from './handlers/inlayHint/on';
 import { onSignatureHelp } from './handlers/signatureHelp';
+import { onPrepare } from './handlers/typeHierarchy/prepare';
+import { onSubtypes } from './handlers/typeHierarchy/subtypes';
+import { onSupertypes } from './handlers/typeHierarchy/supertypes';
+import { onDidChangeWatchedFiles, parseWorkspace } from './parser';
 import { ProcessedData } from './types';
 
 export const connection = createConnection(ProposedFeatures.all);
@@ -73,6 +77,7 @@ connection.onInitialize((params: InitializeParams) => {
 				rangesSupport: false,
 			},
 			documentSymbolProvider: {},
+			// inlayHintProvider: {},
 			signatureHelpProvider: {
 				triggerCharacters: [
 					"("
@@ -116,9 +121,10 @@ connection.onDocumentSymbol(onDocumentSymbol);
 connection.onDefinition(onDefinition);
 connection.onSignatureHelp(onSignatureHelp);
 connection.onDidChangeWatchedFiles(onDidChangeWatchedFiles);
-// connection.languages.typeHierarchy.onSupertypes(onSupertypes);
-// connection.languages.typeHierarchy.onSubtypes(onSubtypes);
-// connection.languages.typeHierarchy.onPrepare(onPrepare);
+connection.languages.inlayHint.on(onInlayHint);
+connection.languages.typeHierarchy.onSupertypes(onSupertypes);
+connection.languages.typeHierarchy.onSubtypes(onSubtypes);
+connection.languages.typeHierarchy.onPrepare(onPrepare);
 
 documents.listen(connection);
 connection.listen();
