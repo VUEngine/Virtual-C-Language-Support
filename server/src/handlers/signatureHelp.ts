@@ -17,12 +17,12 @@ export const onSignatureHelp = (params: SignatureHelpParams): SignatureHelp | nu
 	let result: SignatureHelp | null = null;
 	Object.keys(processedData).forEach(key => {
 		Object.values(processedData[key]['classes']).forEach(c => {
-			c.methods.forEach(m => {
+			Object.values(c.methods).forEach(m => {
 				if (!result && m.qualifiedname === currentMethod) {
 					result = {
 						signatures: [{
 							label: m.definition + m.argsstring,
-							parameters: m.parameters.map(p => ({
+							parameters: Object.values(m.parameters).map(p => ({
 								label: p.name,
 								documentation: p.description,
 							})),

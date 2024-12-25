@@ -17,6 +17,10 @@ export const onCompletion = (params: CompletionParams): CompletionList => {
 
 	let items: CompletionItem[] = [];
 	items = getAllCompletionItems(className, uriBasename, nextLine);
+	if (currentWord.includes('::') || currentWord.includes('this->')) {
+		items = items.filter(e => e.label.toLowerCase().startsWith(currentWord.toLowerCase()));
+	}
+
 	items = addReplaceRangesToCompletionItems(items, params.position.line, lineUntilCursor, currentWord);
 
 	return {
@@ -66,7 +70,7 @@ const getAllCompletionItems = (className: string, uriBasename: string, nextLine:
 			});
 
 			if (className === c.name) {
-				c.variables.forEach(v => {
+				Object.values(c.variables).forEach(v => {
 					allCompletionItems.push({
 						label: `this->${v.name}`,
 						labelDetails: {
@@ -82,7 +86,7 @@ const getAllCompletionItems = (className: string, uriBasename: string, nextLine:
 				});
 			}
 
-			c.methods.forEach(m => {
+			Object.values(c.methods).forEach(m => {
 				allCompletionItems.push({
 					label: m.qualifiedname,
 					labelDetails: {
@@ -97,7 +101,7 @@ const getAllCompletionItems = (className: string, uriBasename: string, nextLine:
 				});
 			});
 
-			c.typedefs.forEach(t => {
+			Object.values(c.typedefs).forEach(t => {
 				allCompletionItems.push({
 					label: t.name,
 					labelDetails: {
@@ -112,7 +116,7 @@ const getAllCompletionItems = (className: string, uriBasename: string, nextLine:
 				});
 			});
 
-			c.enums.forEach(e => {
+			Object.values(c.enums).forEach(e => {
 				allCompletionItems.push({
 					label: e.name,
 					labelDetails: {

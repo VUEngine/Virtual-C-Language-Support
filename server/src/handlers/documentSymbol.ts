@@ -1,4 +1,3 @@
-import * as path from 'path';
 import { DocumentSymbol, DocumentSymbolParams, SymbolKind } from 'vscode-languageserver';
 import { Range } from 'vscode-languageserver-textdocument';
 import { processedData } from '../server';
@@ -6,60 +5,68 @@ import { ClassData, LocationData } from '../types';
 
 export const onDocumentSymbol = (params: DocumentSymbolParams): DocumentSymbol[] | null => {
 	const filePath = params.textDocument.uri.replace("file://", "");
-	const headerPath = filePath.slice(0, -2) + ".h";
 	const classData: Record<string, ClassData[]> = {};
-	Object.keys(processedData).forEach(key => {
-		classData[key] = Object.values(processedData[key]['classes']).filter(c => path.join(key, c.location.header.uri) === headerPath);
-	});
 
 	if (!classData) {
 		return null;
 	}
 
 	const result: DocumentSymbol[] = [];
-	Object.keys(classData).forEach(key => {
-		const relativeFilePath = path.relative(key, filePath);
-		classData[key].forEach(c => {
-			const classSymbol: DocumentSymbol = {
-				kind: SymbolKind.Class,
-				name: c.name,
-				...getRanges(c.location, relativeFilePath),
-				children: [],
-			};
+	Object.keys(processedData).forEach(key => {
+		Object.values(processedData[key]['classes']).forEach(c => {
+			if (c.location.body?.uri === filePath) {
+				result.push({
+					kind: SymbolKind.Class,
+					name: c.name,
+					...getRanges(c.location, filePath),
+					children: [],
+				});
+			}
 
-			c.methods.map(m => {
-				classSymbol.children!.push({
+			Object.values(c.methods).forEach(m => {
+				if (m.location.body?.uri !== filePath && m.location.header.uri !== filePath) {
+					return;
+				}
+				result.push({
 					kind: SymbolKind.Method,
 					name: m.name,
-					...getRanges(m.location, relativeFilePath),
+					detail: c.name,
+					...getRanges(m.location, filePath),
 				});
 			});
 
-			c.variables.map(v => {
-				classSymbol.children!.push({
+			Object.values(c.variables).forEach(v => {
+				if (v.location.body?.uri !== filePath) {
+					return;
+				}
+				result.push({
 					kind: SymbolKind.Variable,
 					name: v.name,
-					...getRanges(v.location, relativeFilePath),
+					...getRanges(v.location, filePath),
 				});
 			});
 
-			c.enums.map(e => {
+			Object.values(c.enums).forEach(e => {
+				if (e.location.body?.uri !== filePath) {
+					return;
+				}
 				result.push({
 					kind: SymbolKind.Enum,
 					name: e.name,
-					...getRanges(e.location, relativeFilePath),
+					...getRanges(e.location, filePath),
 				});
 			});
 
-			c.typedefs.map(t => {
+			Object.values(c.typedefs).forEach(t => {
+				if (c.location.body?.uri !== filePath) {
+					return;
+				}
 				result.push({
 					kind: SymbolKind.Struct,
 					name: t.name,
-					...getRanges(t.location, relativeFilePath),
+					...getRanges(t.location, filePath),
 				});
 			});
-
-			result.push(classSymbol);
 		});
 	});
 

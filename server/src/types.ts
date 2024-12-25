@@ -25,12 +25,13 @@ export interface ParameterData {
 	description: string
 }
 
+
 export interface MethodData extends MemberData {
 	definition: string
 	returnType: string
 	argsstring: string
 	paramDocs: string
-	parameters: ParameterData[]
+	parameters: Record<string, ParameterData>
 }
 
 export interface VariableData extends MemberData {
@@ -42,10 +43,10 @@ export interface ClassData {
 	base?: string
 	description: string
 	location: LocationData
-	methods: MethodData[]
-	variables: VariableData[]
-	enums: MemberData[]
-	typedefs: MemberData[]
+	methods: Record<string, MethodData>
+	variables: Record<string, VariableData>
+	enums: Record<string, MemberData>
+	typedefs: Record<string, MemberData>
 }
 
 export interface StructAttributeData {
@@ -59,7 +60,7 @@ export interface StructData {
 	name: string
 	description: string
 	location: LocationData
-	attributes: StructAttributeData[]
+	attributes: Record<string, StructAttributeData>
 }
 
 export type ClassDataMap = Record<string, ClassData>;
