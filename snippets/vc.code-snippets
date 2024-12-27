@@ -2,7 +2,7 @@
 	"If statement": {
 		"prefix": "if",
 		"body": [
-			"if (${1:expression})",
+			"if(${1:expression})",
 			"{",
 			"\t$0",
 			"}"
@@ -12,7 +12,7 @@
 	"Else if statement": {
 		"prefix": "elseif",
 		"body": [
-			"elseif (${1:expression})",
+			"elseif(${1:expression})",
 			"{",
 			"\t$0",
 			"}"
@@ -22,7 +22,7 @@
 	"Else statement": {
 		"prefix": "else",
 		"body": [
-			"else (${1:expression})",
+			"else",
 			"{",
 			"\t$0",
 			"}"
@@ -32,7 +32,7 @@
 	"For loop": {
 		"prefix": "for",
 		"body": [
-			"for (int i = 0; i < ${1:count}; i++)",
+			"for(int i = 0; i < ${1:count}; i++)",
 			"{",
 			"\t$0",
 			"}"
@@ -42,7 +42,7 @@
 	"While loop": {
 		"prefix": "while",
 		"body": [
-			"while (${1:expression})",
+			"while(${1:expression})",
 			"{",
 			"\t$0",
 			"}"
@@ -55,14 +55,14 @@
 			"do",
 			"{",
 			"\t$0",
-			"} while (${1:expression})"
+			"} while(${1:expression});"
 		],
 		"description": "Do while loop"
 	},
 	"Switch statement": {
 		"prefix": "switch",
 		"body": [
-			"switch (${1:expression})",
+			"switch(${1:expression})",
 			"{",
 			"\tcase ${2:Case}:",
 			"\t{",
