@@ -24,6 +24,22 @@
     "*"
   ],
   "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Virtual C Language Support",
+      "properties": {
+        "virtualC.doxygenPath": {
+          "type": "string",
+          "default": "",
+          "description": "Full path to doxygen executable that is required for IntelliSense features. If let blank, will fall back to the built-in one or a system-wide installation."
+        },
+        "virtualC.clangFormatPath": {
+          "type": "string",
+          "default": "",
+          "description": "Full path to clang-format executable that is required for auto formatting. If let blank, will fall back to the built-in one or a system-wide installation."
+        }
+      }
+    },
     "languages": [
       {
         "id": "vc",

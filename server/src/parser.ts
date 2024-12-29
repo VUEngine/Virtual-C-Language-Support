@@ -11,19 +11,6 @@ const asyncExec = util.promisify(exec);
 
 let isBusy = false;
 const doxyfilePath = path.join(__dirname, "..", "..", "..", "resources", "Doxyfile");
-const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
-let doxygenPath = path.join(binBasePath, "linux", "doxygen", "doxygen");
-switch (process.platform) {
-	case "darwin":
-		doxygenPath = path.join(binBasePath, "osx", "doxygen", "doxygen");
-		break;
-	case "win32":
-		doxygenPath = path.join(binBasePath, "win", "doxygen", "doxygen.exe");
-		break;
-}
-if (!fs.existsSync(doxygenPath)) {
-	doxygenPath = path.basename(doxygenPath);
-}
 
 const tempBasePath = path.join(os.tmpdir(), "virtual-c-ls");
 if (!fs.existsSync(tempBasePath)) {
@@ -77,7 +64,7 @@ export const getDoxygenData = async (folders: string[]): Promise<Record<string, 
 	await Promise.all(folders.map(async folder => {
 		const tempPath = path.join(tempBasePath, Buffer.from(folder).toString('base64'));
 		if (fs.existsSync(tempPath)) {
-			fs.rmSync(tempPath, { recursive: true });
+			fs.rmSync(tempPath, { recursive: true, force: true });
 		}
 
 		let inputFolders = '';
@@ -97,10 +84,15 @@ export const getDoxygenData = async (folders: string[]): Promise<Record<string, 
 			inputFolders = folder;
 		}
 
+		const doxygenPath = await getDoxygenPath();
+
 		if (inputFolders !== '') {
 			try {
 				await asyncExec(
-					`( cat ${doxyfilePath} ; echo "OUTPUT_DIRECTORY=${tempPath}\nINPUT=${inputFolders}" ) | ${doxygenPath} -`
+					`( cat ${doxyfilePath} ; echo "OUTPUT_DIRECTORY=${tempPath}\nINPUT=${inputFolders}" ) | ${doxygenPath} -`,
+					{
+						maxBuffer: 1024 * 5000
+					}
 				);
 				// connection.console.error(stderr);
 				const tempXmlPath = path.join(tempPath, 'xml');
@@ -256,7 +248,7 @@ const getParamsDocs = (member, className, includeThis) => {
 		result += "\n\n_@param_ `" + paramName + "`" + doc;
 	});
 
-	const returnType = member.definition._text.split(" ")[0];
+	const returnType = member.definition?._text.split(" ")[0];
 	if (returnType !== "void" && member.detaileddescription?.para?.simplesect?._attributes?.kind === "return") {
 		result += "\n\n_@return_ `" + returnType + "` " + parseDescription(member.detaileddescription.para.simplesect);
 	}
@@ -268,7 +260,7 @@ const parseDoxygenClassesData = (data: object, folder: string, isWorkspaceRoot: 
 	const result: ClassDataMap = {};
 
 	Object.values(data).forEach(cls => {
-		const compoundname = cls.compoundname._text;
+		const compoundname = cls.compoundname?._text;
 		const bodyStart = parseInt(cls.location._attributes.bodystart);
 		const bodyEnd = parseInt(cls.location._attributes.bodyend);
 		const compoundData: ClassData = {
@@ -330,8 +322,8 @@ const parseClassMembers = (sectiondef: any, compoundname: string, compoundData: 
 			const bodyStart = parseInt(member.location._attributes.bodystart);
 			const bodyEnd = parseInt(member.location._attributes.bodyend);
 			const memberData: MemberData = {
-				name: member.name._text,
-				qualifiedname: member.qualifiedname._text,
+				name: member.name?._text,
+				qualifiedname: member.qualifiedname?._text,
 				description: parseDescriptions(member),
 				location: {
 					header: {
@@ -356,11 +348,11 @@ const parseClassMembers = (sectiondef: any, compoundname: string, compoundData: 
 					return;
 				}
 
-				(memberData as MethodData).definition = member.definition._text;
-				(memberData as MethodData).returnType = member.type._text;
+				(memberData as MethodData).definition = member.definition?._text;
+				(memberData as MethodData).returnType = member.type?._text;
 
-				const includeThis = member.name._text !== "getInstance" && !memberData.static;
-				const cleanedArgsString = member.argsstring._text.replace(")=0", ")");
+				const includeThis = member.name?._text !== "getInstance" && !memberData.static;
+				const cleanedArgsString = member.argsstring?._text.replace(")=0", ")");
 
 				let completeArgs = "(";
 				if (includeThis) {
@@ -426,7 +418,7 @@ const parseClassMembers = (sectiondef: any, compoundname: string, compoundData: 
 				}
 			} else if (member._attributes.kind === "variable") {
 				if (!compoundData.variables[memberData.name]) {
-					(memberData as VariableData).type = member.type._text ?? member.type.ref._text;
+					(memberData as VariableData).type = member.type?._text ?? member.type.ref?._text;
 					compoundData.variables[memberData.name] = memberData as VariableData;
 				}
 			} else {
@@ -440,7 +432,7 @@ const parseDoxygenStructsData = (data: object, folder: string, isWorkspaceRoot: 
 	const result: StructDataMap = {};
 
 	Object.values(data).forEach(cls => {
-		const compoundname = cls.compoundname._text;
+		const compoundname = cls.compoundname?._text;
 		const bodyStart = parseInt(cls.location._attributes.bodystart ?? 0);
 		const bodyEnd = parseInt(cls.location._attributes.bodyend ?? 0);
 		const compoundData: StructData = {
@@ -483,8 +475,8 @@ const parseDoxygenStructsData = (data: object, folder: string, isWorkspaceRoot: 
 				const bodyStart = parseInt(member.location._attributes.bodystart);
 				const bodyEnd = parseInt(member.location._attributes.bodyend);
 				const memberData: StructAttributeData = {
-					name: member.name._text,
-					definition: member.definition._text.replace(` ${compoundname}::`, ' '),
+					name: member.name?._text,
+					definition: member.definition?._text.replace(` ${compoundname}::`, ' '),
 					description: parseDescriptions(member),
 					location: {
 						header: {
@@ -571,4 +563,27 @@ const getBaseClass = (className: string): ClassData | undefined => {
 	});
 
 	return result;
+};
+
+const getDoxygenPath = async () => {
+	const configuredPath = await connection.workspace.getConfiguration("virtualC.doxygenPath");
+	if (configuredPath !== '' && fs.existsSync(configuredPath)) {
+		return configuredPath;
+	}
+
+	const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
+	let doxygenPath = path.join(binBasePath, "linux", "doxygen", "doxygen");
+	switch (process.platform) {
+		case "darwin":
+			doxygenPath = path.join(binBasePath, "osx", "doxygen", "doxygen");
+			break;
+		case "win32":
+			doxygenPath = path.join(binBasePath, "win", "doxygen", "doxygen.exe");
+			break;
+	}
+	if (fs.existsSync(doxygenPath)) {
+		return doxygenPath;
+	}
+
+	return path.basename(doxygenPath);
 };

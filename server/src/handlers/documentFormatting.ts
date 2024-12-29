@@ -8,29 +8,11 @@ import { TextEdit } from 'vscode-languageserver-textdocument';
 import { connection, getDocumentText, workspaceRoot } from '../server';
 const asyncExec = util.promisify(exec);
 
+let clangFormatFilePath = path.join(__dirname, "..", "..", "..", "resources", ".clang-format");
+
 const tempBasePath = path.join(os.tmpdir(), "virtual-c-ls");
 if (!fs.existsSync(tempBasePath)) {
 	fs.mkdirSync(tempBasePath);
-}
-
-let clangFormatFilePath = path.join(__dirname, "..", "..", "..", "resources", ".clang-format");
-const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
-let clangFormatPath = path.join(binBasePath, "linux", "clang-format", "clang-format");
-switch (process.platform) {
-	case "darwin":
-		{
-			const arch = process.arch === "x64" ? "x86_64" : "arm64";
-			clangFormatPath = path.join(binBasePath, "osx", "clang-format", arch, "clang-format");
-			break;
-		}
-	case "win32":
-		{
-			clangFormatPath = path.join(binBasePath, "win", "clang-format", "clang-format.exe");
-			break;
-		}
-}
-if (!fs.existsSync(clangFormatPath)) {
-	clangFormatPath = path.basename(clangFormatPath);
 }
 
 export const onDocumentFormatting = async (params: DocumentFormattingParams | DocumentRangeFormattingParams | DocumentOnTypeFormattingParams): Promise<TextEdit[] | null> =>
@@ -46,6 +28,8 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 	if (fs.existsSync(customClangFormatFilePath)) {
 		clangFormatFilePath = customClangFormatFilePath;
 	}
+
+	const clangFormatPath = await getClangFormatPath();
 
 	const filename = path.basename(params.textDocument.uri);
 	const documentContent = getDocumentText(params.textDocument.uri);
@@ -91,4 +75,32 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 	}
 
 	return null;
+};
+
+const getClangFormatPath = async () => {
+	const configuredPath = await connection.workspace.getConfiguration("virtualC.clangFormatPath");
+	if (configuredPath !== '' && fs.existsSync(configuredPath)) {
+		return configuredPath;
+	}
+
+	const binBasePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "binaries", "vuengine-studio-tools");
+	let clangFormatPath = path.join(binBasePath, "linux", "clang-format", "clang-format");
+	switch (process.platform) {
+		case "darwin":
+			{
+				const arch = process.arch === "x64" ? "x86_64" : "arm64";
+				clangFormatPath = path.join(binBasePath, "osx", "clang-format", arch, "clang-format");
+				break;
+			}
+		case "win32":
+			{
+				clangFormatPath = path.join(binBasePath, "win", "clang-format", "clang-format.exe");
+				break;
+			}
+	}
+	if (fs.existsSync(clangFormatPath)) {
+		return clangFormatPath;
+	}
+
+	return path.basename(clangFormatPath);
 };
