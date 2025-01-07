@@ -37,12 +37,6 @@ const getWorkspaceFolders = async () => {
 			})
 	);
 
-	connection.console.log('getWorkspaceFolders:');
-	connection.console.log(JSON.stringify(workspaceFolders
-		.filter((obj, index, self) =>
-			index === self.findIndex((t) => t.uri === obj.uri)
-		), null, 4));
-
 	return workspaceFolders
 		.filter((obj, index, self) =>
 			index === self.findIndex((t) => t.uri === obj.uri)
@@ -92,17 +86,6 @@ export const getDoxygenData = async (folders: string[]): Promise<Record<string, 
 
 		const doxygenPath = await getDoxygenPath();
 
-		connection.console.log('doxyfilePath:');
-		connection.console.log(doxyfilePath);
-		connection.console.log('tempPath:');
-		connection.console.log(tempPath);
-		connection.console.log('inputFolders:');
-		connection.console.log(inputFolders);
-		connection.console.log('doxygenPath:');
-		connection.console.log(doxygenPath);
-		connection.console.log('getDoxygenData exec:');
-		connection.console.log(`( cat ${doxyfilePath} ; echo "OUTPUT_DIRECTORY=${tempPath}\nINPUT=${inputFolders}" ) | ${doxygenPath} -`);
-
 		if (inputFolders !== '') {
 			try {
 				await asyncExec(
@@ -125,9 +108,6 @@ export const getDoxygenData = async (folders: string[]): Promise<Record<string, 
 		}
 	}));
 
-	connection.console.log('getDoxygenData result:');
-	connection.console.log(JSON.stringify(result, null, 4));
-
 	return result;
 };
 
@@ -138,8 +118,6 @@ export const parse = async (folders: string[]) => {
 	isBusy = true;
 
 	const doxygenData = await getDoxygenData(folders);
-	connection.console.log('doxygenData:');
-	connection.console.log(JSON.stringify(doxygenData, null, 4));
 
 	Object.keys(doxygenData).forEach(folder => {
 		processedData[folder] = {
@@ -149,9 +127,6 @@ export const parse = async (folders: string[]) => {
 	});
 
 	processData();
-
-	connection.console.log('processedData:');
-	connection.console.log(JSON.stringify(processedData, null, 4));
 
 	//fs.writeFileSync(path.join(__dirname, "..", "..", "..", `doxygen.json`), JSON.stringify(doxygenData, null, 4));
 	//fs.writeFileSync(path.join(__dirname, "..", "..", "..", `processed_data.json`), JSON.stringify(processedData, null, 4));
