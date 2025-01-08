@@ -34,9 +34,9 @@ SpacesInLineCommentPrefix:
   Maximum: 1
 SpacesInSquareBrackets: false
 
-# Max column width 108 of characters
+# Max column width 140 of characters
 # put each of a function call's arguments to a new line if they don't fit on a single line
-ColumnLimit: 108
+ColumnLimit: 140
 AlignAfterOpenBracket: BlockIndent
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
