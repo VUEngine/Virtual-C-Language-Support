@@ -19,7 +19,6 @@ export function activate(context: ExtensionContext) {
 			{ scheme: 'file', language: 'vc' },
 		],
 		synchronize: {
-			//fileEvents: workspace.createFileSystemWatcher('**'),
 			fileEvents: workspace.createFileSystemWatcher('**/{assets,headers,source}/**'),
 		}
 	};

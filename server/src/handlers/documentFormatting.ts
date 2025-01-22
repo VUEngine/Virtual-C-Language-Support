@@ -24,9 +24,11 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 		return null;
 	}
 
-	const customClangFormatFilePath = path.join(workspaceRoot, ".clang-format");
-	if (fs.existsSync(customClangFormatFilePath)) {
-		clangFormatFilePath = customClangFormatFilePath;
+	if (workspaceRoot) {
+		const customClangFormatFilePath = path.join(workspaceRoot, ".clang-format");
+		if (fs.existsSync(customClangFormatFilePath)) {
+			clangFormatFilePath = customClangFormatFilePath;
+		}
 	}
 
 	const clangFormatPath = await getClangFormatPath();

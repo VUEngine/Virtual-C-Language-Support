@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
-import { DidChangeWatchedFilesParams } from 'vscode-languageserver';
+import { DidChangeWatchedFilesParams, WorkspaceFolder } from 'vscode-languageserver';
 import * as convert from 'xml-js';
 import { connection, processedData, workspaceRoot } from './server';
 import { ClassData, ClassDataMap, MemberData, MethodData, StructAttributeData, StructData, StructDataMap, VariableData } from './types';
@@ -17,8 +17,11 @@ if (!fs.existsSync(tempBasePath)) {
 	fs.mkdirSync(tempBasePath);
 }
 
-const getWorkspaceFolders = async () => {
-	const workspaceFolders = await connection.workspace.getWorkspaceFolders() ?? [];
+const getWorkspaceFolders = async (): Promise<WorkspaceFolder[]> => {
+	const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+	if (workspaceFolders === null) {
+		return [];
+	}
 
 	await Promise.all(
 		[
