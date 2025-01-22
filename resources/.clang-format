@@ -44,7 +44,6 @@ BinPackArguments: false
 #BinPackParameters: OnePerLine
 
 # Other
-AlignArrayOfStructures: Left
 AlignConsecutiveMacros: AcrossEmptyLinesAndComments
 AlignEscapedNewlines: Right
 AlignOperands: DontAlign
@@ -59,7 +58,6 @@ BreakBeforeTernaryOperators: true
 CommentPragmas: '^(———)'
 InsertNewlineAtEOF: true
 PointerAlignment: Left
-#QualifierOrder: [friend, static, inline, type, const, volatile]
 ReferenceAlignment: Left
 SpaceAroundPointerQualifiers: Before
 SpaceBeforeCaseColon: false
