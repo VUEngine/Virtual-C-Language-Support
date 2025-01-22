@@ -89,10 +89,20 @@ export const getDoxygenData = async (folders: string[]): Promise<Record<string, 
 
 		const doxygenPath = await getDoxygenPath();
 
+		const tempDoxyfilePath = path.join(tempBasePath, 'Doxyfile');
+		if (fs.existsSync(doxyfilePath)) {
+			const doxyfileContent = [
+				fs.readFileSync(doxyfilePath).toString(),
+				`OUTPUT_DIRECTORY=${tempPath}`,
+				`INPUT=${inputFolders}`,
+			];
+			fs.writeFileSync(tempDoxyfilePath, doxyfileContent.join('\n'));
+		}
+
 		if (inputFolders !== '') {
 			try {
 				await asyncExec(
-					`( cat ${doxyfilePath} ; echo "OUTPUT_DIRECTORY=${tempPath}\nINPUT=${inputFolders}" ) | ${doxygenPath} -`,
+					`${doxygenPath} ${tempDoxyfilePath}`,
 					{
 						maxBuffer: 1024 * 5000
 					}

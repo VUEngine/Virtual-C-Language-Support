@@ -47,9 +47,11 @@ export const formatDocument = async (params: DocumentFormattingParams & Document
 	const tempPath = path.join(tempBasePath, `tempFormat${extname}`);
 	fs.writeFileSync(tempPath, documentContent);
 
+	const cat = process.platform === 'win32' ? 'type' : 'cat';
+
 	try {
 		const { stdout, stderr } = await asyncExec(
-			`cat ${tempPath} | ${clangFormatPath}${linesParam} --assume-filename=${filename} --style="file:${clangFormatFilePath}"`
+			`${cat} ${tempPath} | ${clangFormatPath}${linesParam} --assume-filename=${filename} --style="file:${clangFormatFilePath}"`
 		);
 		if (stderr) {
 			connection.console.error(stderr);
