@@ -87,6 +87,10 @@ export const getDoxygenData = async (folders: string[]): Promise<Record<string, 
 			inputFolders = folder;
 		}
 
+		if (process.platform === 'win32') {
+			inputFolders = path.normalize(inputFolders).replace('%3A', ':').substring(1);
+		}
+
 		const doxygenPath = await getDoxygenPath();
 
 		const tempDoxyfilePath = path.join(tempBasePath, 'Doxyfile');
