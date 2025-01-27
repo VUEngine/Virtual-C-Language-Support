@@ -12,6 +12,9 @@ const asyncExec = util.promisify(exec);
 let isBusy = false;
 const doxyfilePath = path.join(__dirname, "..", "..", "..", "resources", "Doxyfile");
 
+const vesBundledCorePath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "vuengine", "core");
+const vesBundledPluginsPath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "vuengine", "plugins");
+
 const tempBasePath = path.join(os.tmpdir(), "virtual-c-ls");
 if (!fs.existsSync(tempBasePath)) {
 	fs.mkdirSync(tempBasePath);
@@ -23,22 +26,19 @@ const getWorkspaceFolders = async (): Promise<WorkspaceFolder[]> => {
 		return [];
 	}
 
-	await Promise.all(
-		[
-			'build.engine.core.path',
-			'plugins.library.path',
-			'plugins.user.path',
-		]
-			.map(async (setting) => {
-				const configuredPath = await connection.workspace.getConfiguration(setting);
-				if (configuredPath) {
-					workspaceFolders.push({
-						'uri': `file://${configuredPath}`,
-						'name': path.basename(configuredPath),
-					});
-				}
-			})
-	);
+	await Promise.all([
+		['build.engine.core.path', vesBundledCorePath],
+		['plugins.library.path', vesBundledPluginsPath],
+		['plugins.user.path'],
+	].map(async (setting) => {
+		const configuredPath = (await connection.workspace.getConfiguration(setting[0])) ?? setting[1];
+		if (configuredPath && fs.existsSync(configuredPath)) {
+			workspaceFolders.push({
+				'uri': `file://${configuredPath}`,
+				'name': path.basename(configuredPath),
+			});
+		}
+	}));
 
 	return workspaceFolders
 		.filter((obj, index, self) =>
@@ -65,7 +65,8 @@ export const parseWorkspace = async () => {
 export const getDoxygenData = async (folders: string[]): Promise<Record<string, { classes: object, structs: object }>> => {
 	const result: Record<string, { classes: object, structs: object }> = {};
 	await Promise.all(folders.map(async folder => {
-		const tempPath = path.join(tempBasePath, Buffer.from(folder).toString('base64'));
+		const folderBase64 = Buffer.from(folder).toString('base64');
+		const tempPath = path.join(tempBasePath, folderBase64);
 		if (fs.existsSync(tempPath)) {
 			fs.rmSync(tempPath, { recursive: true, force: true });
 		}
@@ -93,7 +94,7 @@ export const getDoxygenData = async (folders: string[]): Promise<Record<string, 
 
 		const doxygenPath = await getDoxygenPath();
 
-		const tempDoxyfilePath = path.join(tempBasePath, 'Doxyfile');
+		const tempDoxyfilePath = path.join(tempBasePath, `Doxyfile-${folderBase64}`);
 		if (fs.existsSync(doxyfilePath)) {
 			const doxyfileContent = [
 				fs.readFileSync(doxyfilePath).toString(),
